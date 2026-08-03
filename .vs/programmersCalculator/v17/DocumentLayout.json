@@ -18,7 +18,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
@@ -30,28 +30,28 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "binaryConversions.py",
-              "DocumentMoniker": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\binaryConversions.py",
-              "RelativeDocumentMoniker": "binaryConversions.py",
-              "ToolTip": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\binaryConversions.py",
-              "RelativeToolTip": "binaryConversions.py",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAANAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-08-01T21:01:18.291Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 0,
               "Title": "fpgaCalculator.py",
               "DocumentMoniker": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\fpgaCalculator.py",
               "RelativeDocumentMoniker": "fpgaCalculator.py",
               "ToolTip": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\fpgaCalculator.py",
               "RelativeToolTip": "fpgaCalculator.py",
-              "ViewState": "AgIAAKYAAAAAAAAAAAAawLIAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAP4AAAAAAAAAAAAAABUBAAAZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-08-01T16:35:03.136Z",
+              "WhenOpened": "2026-08-03T08:41:52.54Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "binaryConversions.py",
+              "DocumentMoniker": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\binaryConversions.py",
+              "RelativeDocumentMoniker": "binaryConversions.py",
+              "ToolTip": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\binaryConversions.py",
+              "RelativeToolTip": "binaryConversions.py",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAiAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-08-01T21:01:18.291Z",
               "EditorCaption": ""
             }
           ]
