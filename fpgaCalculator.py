@@ -190,6 +190,8 @@ class FpgaCalculator:
 	def calculate_result(self, operand1, operand2, operator):
 		# TODO: Implement expression splitting (val1, op, val2) 
 		# and conversions based on self.input_mode / self.output_mode
+		print(operand1, operand2, operator)
+		
 		if (operator == "+"):
 			result = operand1 + operand2
 		elif (operator == "-"):
@@ -240,15 +242,18 @@ class FpgaCalculator:
 						else:
 							print(left, op, right)
 							return left, op, right
+					else:
+						op = input_string[input_index]
+						input_index = input_index + 1
 
 					if input_string[input_index] not in (""):
-						op += input_string[input_index]
 						state = 'Second_Operand'
 					else:
 						print(left, op, right)
 						return left, op, right
 				case 'Second_Operand':
 					while input_string[input_index] not in (""):
+						print(state, input_index, right)
 						right += input_string[input_index]
 						
 						if (input_index < data_length-1):
