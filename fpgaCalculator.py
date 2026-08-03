@@ -19,7 +19,15 @@ class FpgaCalculator:
 		
 		self.int_bits = tk.IntVar(value=16)
 		self.frac_bits = tk.IntVar(value=16)
-		modes = []
+		
+		self.integer_size1 = 0
+		self.fraction_size1 = 0
+		self.integer_size2 = 0
+		self.fraction_size2 = 0
+		
+		# Place holders that will eventually get calculated
+		self.integer_size_out = 16
+		self.fraction_size_out = 16
 		
 		self.create_widgets()
 
@@ -87,9 +95,14 @@ class FpgaCalculator:
 		if char == 'R':
 			self.display_var.set("")
 		elif char in ('=', 'Enter'):
-			operand1, operand2, operator = self.get_float_operands()
-			
-			result_float = self.calculate_result(operand1, operand2, operator)
+			operand1, operand2, operator = self.get_operands()
+
+			if (self.input_mode.get() == "BIN"):
+				self.integer_size1, self.fraction_size1 = self.count_input_bits(operand1)
+				self.integer_size2, self.fraction_size2 = self.count_input_bits(operand2)
+
+			operand1_float, operand2_float = self.get_float_operands(operand1, operand2, operator)	
+			result_float = self.calculate_result(operand1_float, operand2_float, operator)
 			result_requested = self.convert_output_format(result_float)
 				
 			print(result_requested, result_float)
@@ -99,12 +112,14 @@ class FpgaCalculator:
 			current = self.display_var.get()
 			self.display_var.set(current + str(char))
 
-	def get_float_operands(self):
+	def get_operands(self):
 		raw_input = self.display_var.get()
 		operand1, operator, operand2 = self.parse_input_string(raw_input)
+		return operand1, operand2, operator
 
+	def get_float_operands(self, operand1, operand2, operator):
 		if (self.input_mode.get() == "BIN"):
-			operand1_float = binary_to_fixed_point(operand1, self.int_bits.get(), self.frac_bits.get())
+			operand1_float = binary_to_fixed_point(operand1, self.integer_size1, self.fraction_size1)
 		elif (self.input_mode.get() == "FP32"):
 			operand1_float = ieee754_hex_to_float(operand1, False)
 		else:
@@ -112,7 +127,7 @@ class FpgaCalculator:
 
 		if operator is not None:			
 			if (self.input_mode.get() == "BIN"):
-				operand2_float = binary_to_fixed_point(operand2, self.int_bits.get(), self.frac_bits.get())
+				operand2_float = binary_to_fixed_point(operand2, self.integer_size2, self.fraction_size2)
 			elif (self.input_mode.get() == "FP32"):
 				operand2_float = ieee754_hex_to_float(operand2, False)
 			else:
@@ -120,7 +135,7 @@ class FpgaCalculator:
 		else:
 			operand2_float = None
 			
-		return operand1_float, operand2_float, operator
+		return operand1_float, operand2_float
 		
 	def calculate_result(self, operand1, operand2, operator):
 		# TODO: Implement expression splitting (val1, op, val2) 
@@ -150,7 +165,7 @@ class FpgaCalculator:
 		print(input_float)
 		
 		if (self.output_mode.get() == "BIN"):
-			output_data = fixed_point_to_binary(input_float, self.int_bits.get(), self.frac_bits.get())
+			output_data = fixed_point_to_binary(input_float, self.integer_size_out, self.fraction_size_out)
 		elif (self.output_mode.get() == "FP32"):
 			output_data = float_to_ieee754_hex(input_float, False)
 		elif (self.output_mode.get() == "REAL"):
@@ -159,4 +174,18 @@ class FpgaCalculator:
 			print('Unknown data format for output')
 		
 		return output_data
+	
+	def count_input_bits(self, input_string):
+		split_list = ["", ""] 
+
+		if '.' in input_string:
+			split_list = input_string.split('.')
+		else:
+			split_list[0] = input_string
+			split_list[1] = ""
 		
+		int_bit_count = len(split_list[0])
+		frac_bit_count = len(split_list[1])
+		print('Int bit count = ', int_bit_count, 'frac_bit_count = ', frac_bit_count)
+		
+		return int_bit_count, frac_bit_count
