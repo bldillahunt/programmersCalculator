@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-import re
+import struct
 from binaryConversions import binary_to_fixed_point
 from binaryConversions import fixed_point_to_binary
 from ieee754Conversions import ieee754_hex_to_float
@@ -129,7 +129,7 @@ class FpgaCalculator:
 				operand1_data_error = self.verify_fp32_input(operand1)
 				
 				if (operand2 != ""):
-					operand2_data_error = self.verify_fp64_input(operand2)
+					operand2_data_error = self.verify_fp32_input(operand2)
 			elif (self.input_mode.get() == "FP64"):
 				operand1_data_error = self.verify_fp64_input(operand1)
 				
@@ -144,10 +144,15 @@ class FpgaCalculator:
 
 					if (operand2 != ""):
 						self.integer_size2, self.fraction_size2 = self.count_input_bits(operand2)
-
-				operand1_float, operand2_float = self.get_float_operands(operand1, operand2, operator)	
-				result_float = self.calculate_result(operand1_float, operand2_float, operator)
-				result_requested = self.convert_output_format(result_float)
+				else:
+					operand1_float, operand2_float = self.get_float_operands(operand1, operand2, operator)	
+				
+				if (self.input_mode.get() == "BIN"):
+					result_binary = self.calculate_binary_result(operand1, operand2, operator)
+					result_requested = convert_output_binary(result_binary)
+				else:
+					result_float = self.calculate_real_result(operand1_float, operand2_float, operator)
+					result_requested = self.convert_output_float(result_float)
 
 				print(result_requested, result_float)
 				self.main_display_var.set("")
@@ -165,29 +170,30 @@ class FpgaCalculator:
 		operand1, operator, operand2 = self.parse_input_string(raw_input)
 		return operand1, operand2, operator
 
-	def get_float_operands(self, operand1, operand2, operator):
-		if (self.input_mode.get() == "BIN"):
-			operand1_float = binary_to_fixed_point(operand1, self.integer_size1, self.fraction_size1)
+	def convert_text_to_type(self, input_string):
+		if (self.input_mode.get() == "REAL"):
+			operand_float = float(input_string)
+		elif (self.input_mode.get() == "HEX"):
+			operand_float = float(int(input_string))
 		elif (self.input_mode.get() == "FP32"):
-			operand1_float = ieee754_hex_to_float(operand1, False)
-		elif (self.input_mode.get() == "REAL"):
-			operand1_float = float(operand1)
+			operand_float = ieee754_hex_to_float(input_string, False)
+		elif (self.input_mode.get() == "FP64"):
+			operand_float = ieee754_hex_to_float(input_string, True)
 		else:
-			print('Unknown data format for operand 1')
+			print('Unknown data format for operand')
+		return operand_float
 
+	def get_float_operands(self, operand1, operand2, operator):
+		operand1_float = self.convert_text_to_type(operand1)
+		
 		if operator != "":			
-			if (self.input_mode.get() == "BIN"):
-				operand2_float = binary_to_fixed_point(operand2, self.integer_size2, self.fraction_size2)
-			elif (self.input_mode.get() == "FP32"):
-				operand2_float = ieee754_hex_to_float(operand2, False)
-			else:
-				print('Unknown data format for operand 2')
+			operand2_float = self.convert_text_to_type(operand2)
 		else:
 			operand2_float = 0
 			
 		return operand1_float, operand2_float
 		
-	def calculate_result(self, operand1, operand2, operator):
+	def calculate_real_result(self, operand1, operand2, operator):
 		# TODO: Implement expression splitting (val1, op, val2) 
 		# and conversions based on self.input_mode / self.output_mode
 		print(operand1, operand2, operator)
@@ -263,20 +269,96 @@ class FpgaCalculator:
 
 					return left, op, right
 		
-	def convert_output_format(self, input_float):
+	def convert_output_float(self, input_float):
 		print(input_float)
 		
-		if (self.output_mode.get() == "BIN"):
-			output_data = fixed_point_to_binary(input_float, self.integer_size_out, self.fraction_size_out)
+		if (self.output_mode.get() == "REAL"):
+			output_data = input_float
+		elif (self.output_mode.get() == "HEX"):
+			output_data = input_float
 		elif (self.output_mode.get() == "FP32"):
 			output_data = float_to_ieee754_hex(input_float, False)
-		elif (self.output_mode.get() == "REAL"):
-			output_data = input_float
+		elif (self.output_mode.get() == "FP32"):
+			output_data = float_to_ieee754_hex(input_float, False)
 		else:
 			print('Unknown data format for output')
 		
 		return output_data
 	
+	def calculate_binary_result(self, input_string1, input_string2) -> str:
+		# 1. Align the binary points
+		if (self.fraction_size1 > self.fraction_size2):
+			padded_integer1 = input_string1
+			padded_integer2 = input_string2 + ("0" * (self.fraction_size1 - self.fraction_size2))
+			fractional_bits = self.fraction_size1
+		elif (self.fraction_size1 < self.fraction_size2):
+			padded_integer1 = input_string1 + ("0" * (self.fraction_size2 - self.fraction_size1))
+			padded_integer2 = input_string2
+			fractional_bits = self.fraction_size2
+		else:
+			padded_integer1 = input_string1
+			padded_integer2 = input_string2
+			fractional_bits = self.fraction_size1
+
+		if (self.integer_size1 > integer_size2)
+			total_bits = self.integer_size1 + fractional_bits
+		elif (self.integer_size2 > integer_size1)
+			total_bits = self.integer_size2 + fractional_bits
+			
+		# 2. Drop the binary point and convert to integer
+		scaled_integer1 = binary_to_fixed_point(padded_integer1, self.integer_size1, self.fraction_size1)
+		scaled_integer2 = binary_to_fixed_point(padded_integer2, self.integer_size2, self.fraction_size2)
+		
+		if (operator == "+"):
+			sum = scaled_integer1 + scaled_integer2
+			masked_value = sum & ((1 << total_bits) - 1)
+			binary_string = f"{masked_value:0{total_bits}b}"
+			result = f"{binary_string[:-fractional_bits]}.{binary_string[-fractional_bits:]}"
+		elif (operator == "-"):
+			difference = scaled_integer1 - scaled_integer2
+			masked_value = difference & ((1 << total_bits) - 1)
+			binary_string = f"{masked_value:0{total_bits}b}"
+			result = f"{binary_string[:-fractional_bits]}.{binary_string[-fractional_bits:]}"
+		elif (operator == "*"):
+			total_multiplier_bits = total_bits * 2
+			total_fractional_bits = fractional_bits * 2
+			product = scaled_integer1 * scaled_integer2
+			masked_value = product & ((1 << total_multiplier_bits) - 1)
+			binary_string = f"{masked_value:0{total_multiplier_bits}b}"
+			result = f"{binary_string[:-total_fractional_bits]}.{binary_string[-total_fractional_bits:]}"
+		elif (operator == "/"):
+			# Arbitrary fraction size, currently set to the sum of the two operand fraction sizes
+			total_fraction_size = self.fraction_size1 + self.fraction_size2
+			total_divider_bits = self.integer_size1 + total_fraction_size
+			
+    		if scaled_integer2 == 0:
+				raise ZeroDivisionError("Cannot divide by zero.")			
+				
+			quotient = int(scaled_integer1 / scaled_integer2)
+			masked_value = quotient & ((1 << total_divider_bits) - 1)
+			binary_string = f"{masked_value:0{total_divider_bits}b}"
+			result = f"{binary_string[:-total_fraction_size]}.{binary_string[-total_fraction_size:]}"
+		else:
+			result = scaled_integer1
+
+		return result
+		 
+	def convert_output_binary(self, input_string):
+		if (self.output_mode.get() == "REAL"):
+			output_data = float(int(input_string))
+		elif (self.output_mode.get() == "HEX"):
+			output_data = input_float
+		elif (self.output_mode.get() == "BIN"):
+			output_data = input_float
+		elif (self.output_mode.get() == "FP32"):
+			output_data = float_to_ieee754_hex(input_float, False)
+		elif (self.output_mode.get() == "FP32"):
+			output_data = float_to_ieee754_hex(input_float, False)
+		else:
+			print('Unknown data format for output')
+		
+		return output_data
+		
 	def count_input_bits(self, input_string):
 		split_list = ["", ""] 
 
@@ -300,16 +382,32 @@ class FpgaCalculator:
 			return True
 	
 	def verify_hex_input(self, input_string):
-		return False
+		try:
+			int(input_string, 16) # Enforces 0-9, a-f
+			return False
+		except ValueError:
+			return True
 	
 	def verify_bin_input(self, input_string):
-		return False
-	
+		try:
+			int(input_string.replace('.', ''), 2) # Enforces 0s and 1s only
+			return False
+		except ValueError:
+			return True
+
+	def is_valid_hex(self, s):
+		"""Returns True if valid hex, False if invalid."""
+		try:
+			int(s, 16)
+			return True
+		except ValueError:
+			return False	
+			
 	def verify_fp32_input(self, input_string):
-		return False
-	
+		return len(input_string) != 8 or not self.is_valid_hex(input_string)
+		
 	def verify_fp64_input(self, input_string):
-		return False
+		return len(input_string) != 16 or not self.is_valid_hex(input_string)
 
 	def verify_operator(self, input_string):
-		return False
+		return input_string not in "+-*/"

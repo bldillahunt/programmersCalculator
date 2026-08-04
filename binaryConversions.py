@@ -1,4 +1,4 @@
-def binary_to_fixed_point(bin_str: str, int_bits: int, frac_bits: int) -> float:
+def binary_to_fixed_point(bin_str: str, int_bits: int, frac_bits: int) -> int:
 	
 	"""Converts a two's complement binary string to a real float value."""
 	total_bits = int_bits + frac_bits
@@ -11,7 +11,7 @@ def binary_to_fixed_point(bin_str: str, int_bits: int, frac_bits: int) -> float:
 
 	print('binary input = ', bin_str, 'total bits = ', total_bits, 'value = ', val)
 		
-	return val / (1 << frac_bits)
+	return val
 
 def fixed_point_to_binary(val: float, int_bits: int, frac_bits: int) -> str:
 	"""Converts a real float value to a signed two's complement binary string."""
