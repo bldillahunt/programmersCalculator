@@ -35,7 +35,9 @@ class FpgaCalculator:
 		self.create_widgets()
 		
 		self.hex_negative_list = ["8", "9", "A", "B", "C", "D", "E", "F", "a", "b", "c", "d", "e", "f", ]
-
+		self.operand1_present = False
+		self.operator_present = False
+		self.operand2_present = False
 	def create_widgets(self):
 		# 1. Main Display
 		main_display_frame = ttk.Frame(self.root, padding=10)
@@ -117,6 +119,8 @@ class FpgaCalculator:
 			operand2_data_error = False
 			operand_error = False
 			
+			print("operand2 present ", self.operand2_present)
+			
 			# Error checking
 			if (self.input_mode.get() == "REAL"):
 				operand1_data_error = self.verify_real_input(operand1)
@@ -124,10 +128,6 @@ class FpgaCalculator:
 				if (operand2 != ""):
 					operand2_data_error = self.verify_real_input(operand2)
 			elif (self.input_mode.get() == "HEX"):
-				print("HEX")
-				print(len(operand1), self.nibble_size)
-				print(len(operand2), self.nibble_size)				
-				
 				if (len(operand1) < self.nibble_size):
 					operand1_padding = self.nibble_size
 					
@@ -136,11 +136,9 @@ class FpgaCalculator:
 					else:
 						operand1 = operand1.rjust(operand1_padding, "0")
 					
-					print(operand1_padding, operand1)
-					
 				operand1_data_error = self.verify_hex_input(operand1)
 				
-				if (operand2 != ""):
+				if (self.operand2_present == True):
 					if (len(operand2) < self.nibble_size):
 						operand2_padding = self.nibble_size
 
@@ -158,12 +156,12 @@ class FpgaCalculator:
 			elif (self.input_mode.get() == "FP32"):
 				operand1_data_error = self.verify_fp32_input(operand1)
 				
-				if (operand2 != ""):
+				if (self.operand2_present == True):
 					operand2_data_error = self.verify_fp32_input(operand2)
 			elif (self.input_mode.get() == "FP64"):
 				operand1_data_error = self.verify_fp64_input(operand1)
 				
-				if (operand2 != ""):
+				if (self.operand2_present == True):
 					operand2_data_error = self.verify_fp64_input(operand2)
 
 			operator_error = self.verify_operator(operator)
@@ -172,20 +170,30 @@ class FpgaCalculator:
 				if (self.input_mode.get() == "BIN"):
 					self.integer_size1, self.fraction_size1 = self.count_input_bits(operand1)
 
-					if (operand2 != ""):
+					if (self.operand2_present == True):
 						self.integer_size2, self.fraction_size2 = self.count_input_bits(operand2)
 				else:
 					operand1_float, operand2_float = self.get_float_operands(operand1, operand2, operator)	
 				
 				if (self.input_mode.get() == "BIN"):
-					result_math, result_int_size, result_frac_size, bin_math_error = self.calculate_binary_result(operand1, operand2, operator)
+					if (self.operand2_present == True):
+						result_math, result_int_size, result_frac_size, bin_math_error = self.calculate_binary_result(operand1, operand2, operator)
+					else:
+						operand1_int = binary_to_fixed_point(operand1, self.integer_size1, self.fraction_size1)
+						result_math = operand1_int >> self.fraction_size1
+						result_int_size = self.integer_size1
+						result_frac_size = self.fraction_size1
+						bin_math_error = False
 					
 					if (bin_math_error == False):
 						result_requested = self.convert_output_binary(result_math, result_int_size, result_frac_size)
 					else:
 						result_requested = "ERROR"
 				else:
-					result_math = self.calculate_real_result(operand1_float, operand2_float, operator)
+					if (self.operand2_present == True):
+						result_math = self.calculate_real_result(operand1_float, operand2_float, operator)
+					else:
+						result_math = operand1_float
 					
 					if (self.output_mode.get() != "BIN"):
 						result_requested = self.convert_output_float(result_math)
@@ -200,7 +208,7 @@ class FpgaCalculator:
 				self.main_display_var.set(result_requested)
 
 				if (bin_math_error == False):
-					if (self.input_mode.get() == "BIN") and (result_frac_size > 0):
+					if (self.input_mode.get() == "BIN") and (result_frac_size > 0) and (self.operand2_present == True):
 						self.aux_display_var.set(result_math/2**result_frac_size)
 					else:								
 						self.aux_display_var.set(result_math)
@@ -235,7 +243,7 @@ class FpgaCalculator:
 	def get_float_operands(self, operand1, operand2, operator):
 		operand1_float = self.convert_text_to_type(operand1)
 		
-		if operator != "":			
+		if self.operand2_present == True:			
 			operand2_float = self.convert_text_to_type(operand2)
 		else:
 			operand2_float = 0
@@ -262,17 +270,23 @@ class FpgaCalculator:
 		
 	def parse_input_string(self, input_string):
 		# No regex options would work here, so this is a brute force state machine
-		state = 'First_Character'
+		state = 'Empty_String_Check'
 		data_length = len(input_string)
 		input_index = 0
 		left = ""
 		op = ""
 		right = ""
-		print(input_string)
-		print(left, op, right, data_length)
+		self.operand1_present = False
+		self.operator_present = False
+		self.operand2_present = False
 		
 		while (True):
 			match state:
+				case 'Empty_String_Check':
+					if not input_string:
+						return left, op, right
+					else:
+						state = 'First_Character'
 				case 'First_Character':
 					if (input_string[input_index] == '+'):
 						state = 'First_Operand'
@@ -289,12 +303,15 @@ class FpgaCalculator:
 						if (input_index < data_length-1):
 							input_index = input_index + 1
 						else:
+							self.operand1_present = True
 							return left, op, right
 					else:
+						self.operand1_present = True
+						self.operator_present = True
 						op = input_string[input_index]
 						input_index = input_index + 1
 
-					if input_string[input_index] not in (""):
+					if (input_string[input_index] not in ("")):
 						state = 'Second_Operand'
 					else:
 						return left, op, right
@@ -305,8 +322,10 @@ class FpgaCalculator:
 						if (input_index < data_length-1):
 							input_index = input_index + 1
 						else:
+							self.operand2_present = True
 							return left, op, right
 
+					self.operand2_present = True
 					return left, op, right
 		
 	def convert_output_float(self, input_float):
@@ -316,7 +335,7 @@ class FpgaCalculator:
 			output_data = input_float
 		elif (self.output_mode.get() == "HEX"):
 			input_scaled = input_float * (2**self.frac_bits.get())
-			self.nibble_size = self.int_bits.get()/4
+			self.nibble_size = self.int_bits.get()//4
 			input_int = int(input_scaled)
 			output_data = hex(input_int)
 		elif (self.output_mode.get() == "BIN"):
@@ -548,7 +567,7 @@ class FpgaCalculator:
 	def verify_bin_input(self, input_string):
 		try:
 			int(input_string.replace('.', ''), 2) # Enforces 0s and 1s only
-			return False
+			return ((input_string.count('.') > 1) or ((input_string[0] != '0') and input_string[0] != '1'))
 		except ValueError:
 			return True
 
