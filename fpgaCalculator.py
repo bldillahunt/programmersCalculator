@@ -68,7 +68,7 @@ class FpgaCalculator:
 		self.modes = [("Real", "REAL"), ("Hex", "HEX"), ("2's Comp Bin", "BIN"), ("IEEE-754 Single", "FP32"), ("IEEE-754 Double", "FP64")]
 		
 		for text, mode in self.modes:
-			ttk.Radiobutton(in_lbl, text=text, variable=self.input_mode, value=mode).pack(anchor="w")
+			ttk.Radiobutton(in_lbl, text=text, variable=self.input_mode, value=mode, command=self.input_mode_changed).pack(anchor="w")
 			
 		# Output Modes (Right side)
 		out_lbl = ttk.LabelFrame(format_frame, text=" Output Format ", padding=5)
@@ -161,7 +161,13 @@ class FpgaCalculator:
 						result_requested = "ERROR"
 				else:
 					result_math = self.calculate_real_result(operand1_float, operand2_float, operator)
-					result_requested = self.convert_output_float(result_math)
+					
+					if (self.output_mode.get() != "BIN"):
+						result_requested = self.convert_output_float(result_math)
+					else:
+						result_scaled_int = int(result_math * 2**self.frac_bits.get())
+						result_requested = self.convert_output_binary(result_scaled_int, self.int_bits.get(), self.frac_bits.get())
+						
 					bin_math_error = False
 
 				print(result_requested, result_math)
@@ -189,7 +195,10 @@ class FpgaCalculator:
 		if (self.input_mode.get() == "REAL"):
 			operand_float = float(input_string)
 		elif (self.input_mode.get() == "HEX"):
-			operand_float = float(int(input_string, 16) - (1 << (len(input_string*4))))
+			if (any(item in input_string[0] for item in ["8", "9", "A", "B", "C", "D", "E", "F", ])):
+				operand_float = float(int(input_string, 16) - (1 << (len(input_string*4))))
+			else:
+				operand_float = float(int(input_string, 16))
 		elif (self.input_mode.get() == "FP32"):
 			operand_float = ieee754_hex_to_float(input_string, False)
 		elif (self.input_mode.get() == "FP64"):
@@ -285,7 +294,7 @@ class FpgaCalculator:
 			input_int = int(input_scaled)
 			output_data = hex(input_int)
 		elif (self.output_mode.get() == "BIN"):
-			output_data = fixed_point_to_binary(input_float, self.int_bits.get(), self.frac_bits.get())
+			output_data = float.hex(input_float)
 		elif (self.output_mode.get() == "FP32"):
 			output_data = float_to_ieee754_hex(input_float, False)
 		elif (self.output_mode.get() == "FP64"):
@@ -501,7 +510,13 @@ class FpgaCalculator:
 	
 	def verify_hex_input(self, input_string):
 		try:
-			int(input_string, 16) # Enforces 0-9, a-f
+			int(input_string, 16)
+			
+			if (len(input_string) != (self.int_bits.get()/4)):
+				print("String size mismatch")
+				return True
+			
+			print("**************")
 			return False
 		except ValueError:
 			return True
@@ -532,3 +547,11 @@ class FpgaCalculator:
 
 	def twos_complement(self, integer_input):
 		return (integer_input ^ (-1) + 1)
+
+	def input_mode_changed(self):
+		mode = self.input_mode.get()
+
+		if mode == "HEX":
+			self.aux_display_var.set("HEX BITS = INTEGER BITS")
+		else:
+			self.aux_display_var.set("")		
