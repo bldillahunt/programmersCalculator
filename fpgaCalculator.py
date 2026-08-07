@@ -30,8 +30,11 @@ class FpgaCalculator:
 		# Place holders that will eventually get calculated
 		self.integer_size_out = 16
 		self.fraction_size_out = 16
+		self.nibble_size = 4
 		
 		self.create_widgets()
+		
+		self.hex_negative_list = ["8", "9", "A", "B", "C", "D", "E", "F", "a", "b", "c", "d", "e", "f", ]
 
 	def create_widgets(self):
 		# 1. Main Display
@@ -121,9 +124,31 @@ class FpgaCalculator:
 				if (operand2 != ""):
 					operand2_data_error = self.verify_real_input(operand2)
 			elif (self.input_mode.get() == "HEX"):
+				print("HEX")
+				print(len(operand1), self.nibble_size)
+				print(len(operand2), self.nibble_size)				
+				
+				if (len(operand1) < self.nibble_size):
+					operand1_padding = self.nibble_size
+					
+					if (any(item in operand1[0] for item in self.hex_negative_list)):
+						operand1 = operand1.rjust(operand1_padding, "F")
+					else:
+						operand1 = operand1.rjust(operand1_padding, "0")
+					
+					print(operand1_padding, operand1)
+					
 				operand1_data_error = self.verify_hex_input(operand1)
 				
 				if (operand2 != ""):
+					if (len(operand2) < self.nibble_size):
+						operand2_padding = self.nibble_size
+
+						if (any(item in operand2[0] for item in self.hex_negative_list)):
+							operand2 = operand2.rjust(operand2_padding, "F")
+						else:
+							operand2 = operand2.rjust(operand2_padding, "0")
+							
 					operand2_data_error = self.verify_hex_input(operand2)
 			elif (self.input_mode.get() == "BIN"):
 				operand1_data_error = self.verify_bin_input(operand1)
@@ -195,7 +220,7 @@ class FpgaCalculator:
 		if (self.input_mode.get() == "REAL"):
 			operand_float = float(input_string)
 		elif (self.input_mode.get() == "HEX"):
-			if (any(item in input_string[0] for item in ["8", "9", "A", "B", "C", "D", "E", "F", ])):
+			if (any(item in input_string[0] for item in self.hex_negative_list)):
 				operand_float = float(int(input_string, 16) - (1 << (len(input_string*4))))
 			else:
 				operand_float = float(int(input_string, 16))
@@ -291,6 +316,7 @@ class FpgaCalculator:
 			output_data = input_float
 		elif (self.output_mode.get() == "HEX"):
 			input_scaled = input_float * (2**self.frac_bits.get())
+			self.nibble_size = self.int_bits.get()/4
 			input_int = int(input_scaled)
 			output_data = hex(input_int)
 		elif (self.output_mode.get() == "BIN"):
@@ -512,11 +538,9 @@ class FpgaCalculator:
 		try:
 			int(input_string, 16)
 			
-			if (len(input_string) != (self.int_bits.get()/4)):
-				print("String size mismatch")
+			if (len(input_string) != self.nibble_size):
 				return True
 			
-			print("**************")
 			return False
 		except ValueError:
 			return True
