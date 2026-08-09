@@ -38,6 +38,7 @@ class FpgaCalculator:
 		self.operand1_present = False
 		self.operator_present = False
 		self.operand2_present = False
+		self.math_operation = ""
 	def create_widgets(self):
 		# 1. Main Display
 		main_display_frame = ttk.Frame(self.root, padding=10)
@@ -115,9 +116,11 @@ class FpgaCalculator:
 			self.fraction_size2 = 0
 		elif char in ('=', 'Enter'):
 			operand1, operand2, operator = self.get_operands()
+			self.math_operation = operator
 			operand1_data_error = False
 			operand2_data_error = False
 			operand_error = False
+			bin_math_error = False
 			
 			print("operand2 present ", self.operand2_present)
 			
@@ -176,14 +179,15 @@ class FpgaCalculator:
 					operand1_float, operand2_float = self.get_float_operands(operand1, operand2, operator)	
 				
 				if (self.input_mode.get() == "BIN"):
-					if (self.operand2_present == True):
-						result_math, result_int_size, result_frac_size, bin_math_error = self.calculate_binary_result(operand1, operand2, operator)
-					else:
-						operand1_int = binary_to_fixed_point(operand1, self.integer_size1, self.fraction_size1)
-						result_math = operand1_int >> self.fraction_size1
-						result_int_size = self.integer_size1
-						result_frac_size = self.fraction_size1
-						bin_math_error = False
+#					if (self.operand2_present == True):
+					result_math, result_int_size, result_frac_size, bin_math_error = self.calculate_binary_result(operand1, operand2, operator)
+#					else:
+#						result_math, result_int_size, result_frac_size, bin_math_error = self.calculate_binary_result(operand1, '01', '/')
+#						operand1_int = binary_to_fixed_point(operand1, self.integer_size1, self.fraction_size1)
+#						result_math = operand1_int >> self.fraction_size1
+#						result_int_size = self.integer_size1
+#						result_frac_size = self.fraction_size1
+#						bin_math_error = False
 					
 					if (bin_math_error == False):
 						result_requested = self.convert_output_binary(result_math, result_int_size, result_frac_size)
@@ -203,15 +207,18 @@ class FpgaCalculator:
 						
 					bin_math_error = False
 
-				print(result_requested, result_math)
-				self.main_display_var.set("")
-				self.main_display_var.set(result_requested)
+#				self.main_display_var.set("")
+#				self.main_display_var.set(result_requested)
 
 				if (bin_math_error == False):
-					if (self.input_mode.get() == "BIN") and (result_frac_size > 0) and (self.operand2_present == True):
-						self.aux_display_var.set(result_math/2**result_frac_size)
-					else:								
-						self.aux_display_var.set(result_math)
+					self.aux_display_var.set(result_requested)
+				else:
+					self.aux_display_var.set("ERROR")
+					
+#					if (self.input_mode.get() == "BIN") and (result_frac_size > 0) and (self.operand2_present == True):
+#						self.aux_display_var.set(result_math/2**result_frac_size)
+#					else:								
+#						self.aux_display_var.set(result_math)
 			else:
 				self.main_display_var.set("")
 				self.aux_display_var.set("ERROR")
@@ -457,11 +464,24 @@ class FpgaCalculator:
 				return result, integer_size, fraction_size, binary_error
 
 			if (self.output_mode.get() == "REAL"):
-				integer_size = 0
-				fraction_size = 0
+				if (self.integer_size1 > 0):
+					input_string1_upscaled = input_string1[:self.integer_size1] + input_string1[self.integer_size1+1:]
+					integer_size = 0
+					fraction_size = 0
+				else:
+					input_string1_upscaled = "0" + input_string1[self.integer_size1+2:]
+					integer_size = 0
+					fraction_size = 0
 				
-				input_string1_upscaled = input_string1[:self.integer_size1] + input_string1[self.integer_size1+1:]
-				input_string2_upscaled = input_string2[:self.integer_size2] + input_string2[self.integer_size2+1:]
+				if (self.integer_size2 > 0):
+					input_string2_upscaled = input_string2[:self.integer_size2] + input_string2[self.integer_size2+1:]
+					integer_size = 0
+					fraction_size = 0
+				else:
+					input_string2_upscaled = "0" + input_string2[self.integer_size2+2:]
+					integer_size = 0
+					fraction_size = 0
+					
 				input_string1_int = int(input_string1_upscaled, 2)
 				input_string2_int = int(input_string2_upscaled, 2)
 					
@@ -491,16 +511,19 @@ class FpgaCalculator:
 				result = int(quotient * (2**fraction_size))
 				print("Divider math", numerator, denominator, quotient)
 		else:
-			result = extended_integer1
 			integer_size = math_int_size1
-			fraction_size = self.fraction_size1
+			fraction_size = fractional_bits
+			result = extended_integer1
 
-		print('Binary math output = ', result)
+		print('Binary math output = ', result, 'int size = ', integer_size, 'fraction_size = ', fraction_size)
 		return result, integer_size, fraction_size, binary_error
 		 
 	def convert_output_binary(self, value, int_size, frac_size):
 		if (self.output_mode.get() == "REAL"):
-			output_data = value
+			if (self.math_operation != ''):
+				output_data = float(value)
+			else:
+				output_data = float(value)/2**frac_size
 		elif (self.output_mode.get() == "HEX"):
 			output_data = hex(value & ((1 << (int_size + frac_size)) - 1))
 		elif (self.output_mode.get() == "BIN"):
@@ -540,7 +563,11 @@ class FpgaCalculator:
 			split_list[0] = input_string
 			split_list[1] = ""
 		
-		int_bit_count = len(split_list[0])
+		if (input_string[0] == '0') and (input_string[1] == '.'):
+			int_bit_count = 0;
+		else:
+			int_bit_count = len(split_list[0])
+			
 		frac_bit_count = len(split_list[1])
 		print('Int bit count = ', int_bit_count, 'frac_bit_count = ', frac_bit_count)
 		
@@ -567,7 +594,7 @@ class FpgaCalculator:
 	def verify_bin_input(self, input_string):
 		try:
 			int(input_string.replace('.', ''), 2) # Enforces 0s and 1s only
-			return ((input_string.count('.') > 1) or ((input_string[0] != '0') and input_string[0] != '1'))
+			return ((input_string.count('.') > 1) or ((input_string[0] != '0') and (input_string[0] != '1')) or (input_string[-1] == '.'))
 		except ValueError:
 			return True
 

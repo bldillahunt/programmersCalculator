@@ -3,12 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{683D0463-054B-4BBF-8BD4-3A79EBE509C1}|programmersCalculator.pyproj|C:\\Users\\ambig\\source\\repos\\programmersCalculator\\programmersCalculator.py||{8B382828-6202-11D1-8870-0000F87579D2}|",
+      "RelativeMoniker": "D:0:0:{683D0463-054B-4BBF-8BD4-3A79EBE509C1}|programmersCalculator.pyproj|solutionrelative:programmersCalculator.py||{8B382828-6202-11D1-8870-0000F87579D2}|"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\ambig\\source\\repos\\programmersCalculator\\fpgaCalculator.py||{8B382828-6202-11D1-8870-0000F87579D2}|",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:fpgaCalculator.py||{8B382828-6202-11D1-8870-0000F87579D2}|"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{683D0463-054B-4BBF-8BD4-3A79EBE509C1}|programmersCalculator.pyproj|C:\\Users\\ambig\\source\\repos\\programmersCalculator\\programmersCalculator.py||{8B382828-6202-11D1-8870-0000F87579D2}|",
-      "RelativeMoniker": "D:0:0:{683D0463-054B-4BBF-8BD4-3A79EBE509C1}|programmersCalculator.pyproj|solutionrelative:programmersCalculator.py||{8B382828-6202-11D1-8870-0000F87579D2}|"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\ambig\\source\\repos\\programmersCalculator\\build_exe.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:build_exe.py||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\ambig\\source\\repos\\programmersCalculator\\binaryConversions.py||{8B382828-6202-11D1-8870-0000F87579D2}|",
@@ -22,7 +26,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 5,
           "Children": [
             {
               "$type": "Bookmark",
@@ -34,20 +38,33 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
+              "Title": "build_exe.py",
+              "DocumentMoniker": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\build_exe.py",
+              "RelativeDocumentMoniker": "build_exe.py",
+              "ToolTip": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\build_exe.py",
+              "RelativeToolTip": "build_exe.py",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-08-08T22:14:36.283Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "fpgaCalculator.py",
               "DocumentMoniker": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\fpgaCalculator.py",
               "RelativeDocumentMoniker": "fpgaCalculator.py",
               "ToolTip": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\fpgaCalculator.py",
               "RelativeToolTip": "fpgaCalculator.py",
-              "ViewState": "AgIAABEBAAAAAAAAAAAkwBoBAAAPAAAAAAAAAA==",
+              "ViewState": "AgIAANIBAAAAAAAAAAAkwOQBAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
               "WhenOpened": "2026-08-07T07:02:51.373Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "binaryConversions.py",
               "DocumentMoniker": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\binaryConversions.py",
               "RelativeDocumentMoniker": "binaryConversions.py",
@@ -59,7 +76,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
               "Title": "programmersCalculator.py",
               "DocumentMoniker": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\programmersCalculator.py",
               "RelativeDocumentMoniker": "programmersCalculator.py",
