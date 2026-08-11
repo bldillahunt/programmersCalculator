@@ -6,6 +6,7 @@ from binaryConversions import fixed_point_to_binary
 from ieee754Conversions import ieee754_hex_to_float
 from ieee754Conversions import float_to_ieee754_hex
 from decimal import Decimal
+import time
 
 class FpgaCalculator:
 	def __init__(self, root):
@@ -39,6 +40,7 @@ class FpgaCalculator:
 		self.operator_present = False
 		self.operand2_present = False
 		self.math_operation = ""
+		self.button_push_result = ""
 	def create_widgets(self):
 		# 1. Main Display
 		main_display_frame = ttk.Frame(self.root, padding=10)
@@ -48,7 +50,7 @@ class FpgaCalculator:
 		self.main_display.pack(fill="x", ipady=10)
 
 		# 2. Configuration Panel (Bit Widths)
-		config_frame = ttk.LabelFrame(self.root, text=" Binary Output Defaults ", padding=10)
+		config_frame = ttk.LabelFrame(self.root, text="Binary Division and Hexadecimal Output Defaults ", padding=10)
 		config_frame.pack(fill="x", padx=10, pady=5)
 		
 		ttk.Label(config_frame, text="Integer Bits:").grid(row=0, column=0, sticky="w")
@@ -80,7 +82,7 @@ class FpgaCalculator:
 		out_lbl = ttk.LabelFrame(format_frame, text=" Output Format ", padding=5)
 		out_lbl.pack(side="right", fill="both", expand=True, padx=5)
 		for text, mode in self.modes:
-			ttk.Radiobutton(out_lbl, text=text, variable=self.output_mode, value=mode).pack(anchor="w")
+			ttk.Radiobutton(out_lbl, text=text, variable=self.output_mode, value=mode, command=self.output_mode_changed).pack(anchor="w")
 
 		# 4. Calculator Buttons
 		btn_frame = ttk.Frame(self.root, padding=10)
@@ -107,6 +109,8 @@ class FpgaCalculator:
 			btn_frame.columnconfigure(i, weight=1)
 
 	def on_button_click(self, char):
+		self.button_push_result = char
+		
 		if char == 'R':
 			self.main_display_var.set("")
 			self.aux_display_var.set("")
@@ -121,6 +125,7 @@ class FpgaCalculator:
 			operand2_data_error = False
 			operand_error = False
 			bin_math_error = False
+			self.nibble_size = self.int_bits.get()//4
 			
 			print("operand2 present ", self.operand2_present)
 			
@@ -156,6 +161,8 @@ class FpgaCalculator:
 				
 				if (operand2 != ""):
 					operand2_data_error = self.verify_bin_input(operand2)
+				elif (self.operator_present == True) and (self.operand2_present == False):
+					operand2_data_error = True
 			elif (self.input_mode.get() == "FP32"):
 				operand1_data_error = self.verify_fp32_input(operand1)
 				
@@ -318,9 +325,14 @@ class FpgaCalculator:
 						op = input_string[input_index]
 						input_index = input_index + 1
 
-					if (input_string[input_index] not in ("")):
-						state = 'Second_Operand'
+					if (input_index < len(input_string)):
+						if (input_string[input_index] not in ("")):
+							state = 'Second_Operand'
+						else:
+							self.operand2_present = False
+							return left, op, right
 					else:
+						self.operand2_present = False
 						return left, op, right
 				case 'Second_Operand':
 					while input_string[input_index] not in (""):
@@ -339,12 +351,18 @@ class FpgaCalculator:
 		print(input_float)
 		
 		if (self.output_mode.get() == "REAL"):
+			if (self.input_mode.get() == "HEX"):
+				input_float /=(2**self.frac_bits.get())
+				
 			output_data = input_float
 		elif (self.output_mode.get() == "HEX"):
-			input_scaled = input_float * (2**self.frac_bits.get())
-			self.nibble_size = self.int_bits.get()//4
-			input_int = int(input_scaled)
-			output_data = hex(input_int)
+			input_scaled = int(input_float * (2**self.frac_bits.get()))
+			print('input_scaled = ', input_scaled)
+			mask = (1 << (self.int_bits.get() + self.frac_bits.get())) - 1
+			print('mask = ', mask)
+			input_masked = input_scaled & mask
+			print('input_masked = ', input_masked)
+			output_data = f"{input_masked:X}"
 		elif (self.output_mode.get() == "BIN"):
 			output_data = float.hex(input_float)
 		elif (self.output_mode.get() == "FP32"):
@@ -403,7 +421,7 @@ class FpgaCalculator:
 
 		extended_integer1 = scaled_integer1
 		
-		if (operator != ""):
+		if (operator != "") and (self.operand2_present == True):
 			if (math_int_size2 == 0):
 				integer_val2 = int(padded_integer2[2:], 2)
 				scaled_integer2 = integer_val2
@@ -525,7 +543,8 @@ class FpgaCalculator:
 			else:
 				output_data = float(value)/2**frac_size
 		elif (self.output_mode.get() == "HEX"):
-			output_data = hex(value & ((1 << (int_size + frac_size)) - 1))
+			input_masked = value & ((1 << (int_size + frac_size)) - 1)
+			output_data = f"{input_masked:X}"
 		elif (self.output_mode.get() == "BIN"):
 			total_bits = int_size + frac_size
 
@@ -622,6 +641,44 @@ class FpgaCalculator:
 		mode = self.input_mode.get()
 
 		if mode == "HEX":
-			self.aux_display_var.set("HEX BITS = INTEGER BITS")
-		else:
-			self.aux_display_var.set("")		
+			dialog = tk.Toplevel(self.root)
+			dialog.title("Hexadecimal Options")
+			dialog.geometry("400x175")
+
+			ttk.Label(
+				dialog,
+				text=f"HEX input OPTIONS",
+				font=("Arial", 10, "bold")
+			).pack(pady=10)
+
+			ttk.Label(
+				dialog,
+				text="Set the number of integer bits and the number of fraction bits and allow enough room for the sign bit. No need for '0x' or for '.'. Sign extension will be done automatically if not enough nibbles are entered and it will be based on the most signficant nibble",
+				wraplength = 350,
+				justify = "left"
+			).pack(padx=10, pady=10)
+
+			dialog.after(5000, dialog.destroy)
+
+	def output_mode_changed(self):
+		mode = self.output_mode.get()
+
+		if mode == "HEX":
+			dialog = tk.Toplevel(self.root)
+			dialog.title("Hexadecimal Options")
+			dialog.geometry("400x175")
+
+			ttk.Label(
+				dialog,
+				text=f"HEX output OPTIONS",
+				font=("Arial", 10, "bold")
+			).pack(pady=10)
+
+			ttk.Label(
+				dialog,
+				text="The number of bits in the output will be equal to 'Integer bits' + 'Fraction_bits' if the input is 'BIN' or 'HEX'. The value will have no hexadecimal point and it will be scaled by the number of fractional bits.",
+				wraplength = 350,
+				justify = "left"
+			).pack(padx=10, pady=10)
+
+			dialog.after(5000, dialog.destroy)
