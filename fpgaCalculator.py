@@ -206,13 +206,16 @@ class FpgaCalculator:
 					else:
 						result_math = operand1_float
 					
-					if (self.output_mode.get() != "BIN"):
-						result_requested = self.convert_output_float(result_math)
-					else:
-						result_scaled_int = int(result_math * 2**self.frac_bits.get())
-						result_requested = self.convert_output_binary(result_scaled_int, self.int_bits.get(), self.frac_bits.get())
+					if (result_math != "ERROR"):
+						if (self.output_mode.get() != "BIN"):
+							result_requested = self.convert_output_float(result_math)
+						else:
+							result_scaled_int = int(result_math * 2**self.frac_bits.get())
+							result_requested = self.convert_output_binary(result_scaled_int, self.int_bits.get(), self.frac_bits.get())
 						
-					bin_math_error = False
+						bin_math_error = False
+					else:
+						bin_math_error = True
 
 #				self.main_display_var.set("")
 #				self.main_display_var.set(result_requested)
@@ -243,9 +246,9 @@ class FpgaCalculator:
 			operand_float = float(input_string)
 		elif (self.input_mode.get() == "HEX"):
 			if (any(item in input_string[0] for item in self.hex_negative_list)):
-				operand_float = float(int(input_string, 16) - (1 << (len(input_string*4))))
+				operand_float = int(input_string, 16) - (1 << (len(input_string*4)))
 			else:
-				operand_float = float(int(input_string, 16))
+				operand_float = int(input_string, 16)
 		elif (self.input_mode.get() == "FP32"):
 			operand_float = ieee754_hex_to_float(input_string, False)
 		elif (self.input_mode.get() == "FP64"):
@@ -270,11 +273,37 @@ class FpgaCalculator:
 		print(operand1, operand2, operator)
 		
 		if (operator == "+"):
-			result = operand1 + operand2
+			integer_sum = operand1 + operand2
+				
+			if (self.input_mode.get() == "HEX"):
+				if (integer_sum > (2**(self.int_bits.get()+self.frac_bits.get()-1)-1)) or (integer_sum < -2**(self.int_bits.get()+self.frac_bits.get()-1)):
+					result = "ERROR"
+				else:
+					result = integer_sum
+			else:
+				result = integer_sum
 		elif (operator == "-"):
-			result = operand1 - operand2
+			integer_difference = operand1 - operand2
+			
+			if (self.input_mode.get() == "HEX"):
+				if (integer_integer_difference < -2**(self.int_bits.get()+self.frac_bits.get()-1)):
+					result = "ERROR"
+				else:
+					result = integer_difference
+			else:
+				result = integer_difference
 		elif (operator == "*"):
-			result = operand1 * operand2
+			integer_product = operand1 * operand2
+			product_int_size = self.int_bits.get()
+			product_frac_size = self.frac_bits.get()
+
+			if (self.input_mode.get() == "HEX"):
+				if ((integer_product >> product_frac_size) > (2**(product_int_size+product_frac_size-1)-1)) or ((integer_product >> product_frac_size) < -2**(product_int_size+product_frac_size-1)):
+					result = "ERROR"
+				else:
+					result = integer_product
+			else:
+				result = integer_product
 		elif (operator == "/"):
 			result = operand1 / operand2
 		else:
@@ -294,6 +323,8 @@ class FpgaCalculator:
 		self.operator_present = False
 		self.operand2_present = False
 		
+		print('parser input string = ', input_string)
+		
 		while (True):
 			match state:
 				case 'Empty_String_Check':
@@ -306,8 +337,12 @@ class FpgaCalculator:
 						state = 'First_Operand'
 					elif (input_string[input_index] == '-') or (input_string[input_index].isalnum()):
 						left += input_string[input_index]
-						input_index = input_index + 1
-						state = 'First_Operand'
+						
+						if (len(input_string) > 1):
+							input_index = input_index + 1
+							state = 'First_Operand'
+						else:
+							return left, op, right
 					else:
 						return left, op, right
 				case 'First_Operand':
@@ -394,12 +429,12 @@ class FpgaCalculator:
 			fractional_bits = self.fraction_size1
 			fraction_difference = 0
 
-		if (self.integer_size1 == 1) and (input_string1[0] == "0"):
+		if (self.integer_size1 == 1) and (input_string1[0] == "0") and (self.fraction_size1 > 0):
 			math_int_size1 = 0
 		else:
 			math_int_size1 = self.integer_size1
 			
-		if (self.integer_size2 == 1) and (input_string2[0] == "0"):
+		if (self.integer_size2 == 1) and (input_string2[0] == "0") and (self.fraction_size2 > 0):
 			math_int_size2 = 0
 		else:
 			math_int_size2 = self.integer_size2
@@ -574,22 +609,26 @@ class FpgaCalculator:
 		return output_data
 		
 	def count_input_bits(self, input_string):
-		split_list = ["", ""] 
-
-		if '.' in input_string:
-			split_list = input_string.split('.')
-		else:
-			split_list[0] = input_string
-			split_list[1] = ""
-		
-		if (input_string[0] == '0') and (input_string[1] == '.'):
-			int_bit_count = 0;
-		else:
-			int_bit_count = len(split_list[0])
+		if (len(input_string) > 1):
+			split_list = ["", ""] 
 			
-		frac_bit_count = len(split_list[1])
-		print('Int bit count = ', int_bit_count, 'frac_bit_count = ', frac_bit_count)
-		
+			if '.' in input_string:
+				split_list = input_string.split('.')
+			else:
+				split_list[0] = input_string
+				split_list[1] = ""
+
+			if (input_string[0] == '0') and (input_string[1] == '.'):
+				int_bit_count = 0;
+			else:
+				int_bit_count = len(split_list[0])
+
+			frac_bit_count = len(split_list[1])
+			print('Int bit count = ', int_bit_count, 'frac_bit_count = ', frac_bit_count)
+		else:
+			int_bit_count = 1
+			frac_bit_count = 0
+			
 		return int_bit_count, frac_bit_count
 
 	def verify_real_input(self, input_string):
@@ -603,7 +642,7 @@ class FpgaCalculator:
 		try:
 			int(input_string, 16)
 			
-			if (len(input_string) != self.nibble_size):
+			if (len(input_string) > (self.int_bits.get() + self.frac_bits.get())/4):
 				return True
 			
 			return False
@@ -658,7 +697,7 @@ class FpgaCalculator:
 				justify = "left"
 			).pack(padx=10, pady=10)
 
-			dialog.after(5000, dialog.destroy)
+			dialog.after(10000, dialog.destroy)
 
 	def output_mode_changed(self):
 		mode = self.output_mode.get()
@@ -681,4 +720,4 @@ class FpgaCalculator:
 				justify = "left"
 			).pack(padx=10, pady=10)
 
-			dialog.after(5000, dialog.destroy)
+			dialog.after(10000, dialog.destroy)
