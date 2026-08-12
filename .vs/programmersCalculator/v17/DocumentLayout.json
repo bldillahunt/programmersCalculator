@@ -29,15 +29,24 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
             },
             {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "fpgaCalculator.py",
+              "DocumentMoniker": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\fpgaCalculator.py",
+              "RelativeDocumentMoniker": "fpgaCalculator.py",
+              "ToolTip": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\fpgaCalculator.py",
+              "RelativeToolTip": "fpgaCalculator.py",
+              "ViewState": "AgIAAEUCAAAAAAAAAAAUwEsCAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-08-12T05:43:01.492Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -50,19 +59,6 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
               "WhenOpened": "2026-08-11T11:00:41.972Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "fpgaCalculator.py",
-              "DocumentMoniker": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\fpgaCalculator.py",
-              "RelativeDocumentMoniker": "fpgaCalculator.py",
-              "ToolTip": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\fpgaCalculator.py",
-              "RelativeToolTip": "fpgaCalculator.py",
-              "ViewState": "AgIAAH8CAAAAAAAAAAAtwIcCAAAPAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-08-07T07:02:51.373Z",
-              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -87,6 +83,10 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
               "WhenOpened": "2026-08-08T22:14:36.283Z"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
             },
             {
               "$type": "Document",

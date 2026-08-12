@@ -7,6 +7,7 @@ from ieee754Conversions import ieee754_hex_to_float
 from ieee754Conversions import float_to_ieee754_hex
 from decimal import Decimal
 import time
+from fixedpoint import FixedPoint
 
 class FpgaCalculator:
 	def __init__(self, root):
@@ -136,7 +137,7 @@ class FpgaCalculator:
 				if (operand2 != ""):
 					operand2_data_error = self.verify_real_input(operand2)
 			elif (self.input_mode.get() == "HEX"):
-				if (len(operand1) < self.nibble_size):
+				if (len(operand1) < self.nibble_size) and (len(operand1) > 0):
 					operand1_padding = self.nibble_size
 					
 					if (any(item in operand1[0] for item in self.hex_negative_list)):
@@ -147,7 +148,7 @@ class FpgaCalculator:
 				operand1_data_error = self.verify_hex_input(operand1)
 				
 				if (self.operand2_present == True):
-					if (len(operand2) < self.nibble_size):
+					if (len(operand2) < self.nibble_size) and (len(operand2) > 0):
 						operand2_padding = self.nibble_size
 
 						if (any(item in operand2[0] for item in self.hex_negative_list)):
@@ -286,7 +287,7 @@ class FpgaCalculator:
 			integer_difference = operand1 - operand2
 			
 			if (self.input_mode.get() == "HEX"):
-				if (integer_integer_difference < -2**(self.int_bits.get()+self.frac_bits.get()-1)):
+				if (integer_difference < -2**(self.int_bits.get()+self.frac_bits.get()-1)):
 					result = "ERROR"
 				else:
 					result = integer_difference
@@ -413,12 +414,12 @@ class FpgaCalculator:
 		binary_error = False
 		
 		# 1. Align the binary points
-		if (self.fraction_size1 > self.fraction_size2):
+		if (self.fraction_size1 > self.fraction_size2) and (self.fraction_size2 > 0):
 			padded_integer1 = input_string1
 			padded_integer2 = input_string2 + ("0" * (self.fraction_size1 - self.fraction_size2))
 			fractional_bits = self.fraction_size1
 			fraction_difference = self.fraction_size1 - self.fraction_size2
-		elif (self.fraction_size1 < self.fraction_size2):
+		elif (self.fraction_size1 < self.fraction_size2) and (self.fraction_size1 > 0):
 			padded_integer1 = input_string1 + ("0" * (self.fraction_size2 - self.fraction_size1))
 			padded_integer2 = input_string2
 			fractional_bits = self.fraction_size2
@@ -555,6 +556,10 @@ class FpgaCalculator:
 				result = (float(numerator)/2**self.fraction_size1) / (float(denominator)/2**self.fraction_size2)
 			else:
 				integer_size = max(math_int_size1, math_int_size2)
+				
+#				if (self.fraction_size1 > self.fraction_size2):
+#					fraction_size = self.fraction_size1 - self.fraction_size2
+#				else:
 				fraction_size = self.frac_bits.get()
 			
 				# Scale the numerator using the default fractional value				
@@ -578,8 +583,10 @@ class FpgaCalculator:
 			else:
 				output_data = float(value)/2**frac_size
 		elif (self.output_mode.get() == "HEX"):
-			input_masked = value & ((1 << (int_size + frac_size)) - 1)
+#			input_sign_extended = value - (1 << (int_size + frac_size))
+			input_masked = value & ((1 << (self.int_bits.get() + self.frac_bits.get())) - 1)
 			output_data = f"{input_masked:X}"
+			print("value = ", value, "output_data = ", "input_masked = ", input_masked, output_data)
 		elif (self.output_mode.get() == "BIN"):
 			total_bits = int_size + frac_size
 
@@ -624,11 +631,11 @@ class FpgaCalculator:
 				int_bit_count = len(split_list[0])
 
 			frac_bit_count = len(split_list[1])
-			print('Int bit count = ', int_bit_count, 'frac_bit_count = ', frac_bit_count)
 		else:
 			int_bit_count = 1
 			frac_bit_count = 0
 			
+		print('Int bit count = ', int_bit_count, 'frac_bit_count = ', frac_bit_count)
 		return int_bit_count, frac_bit_count
 
 	def verify_real_input(self, input_string):
