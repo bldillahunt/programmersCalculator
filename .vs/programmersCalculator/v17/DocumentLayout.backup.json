@@ -7,6 +7,10 @@
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:fpgaCalculator.py||{8B382828-6202-11D1-8870-0000F87579D2}|"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\ambig\\source\\repos\\programmersCalculator\\ieee754Conversions.py||{8B382828-6202-11D1-8870-0000F87579D2}|",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:ieee754Conversions.py||{8B382828-6202-11D1-8870-0000F87579D2}|"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{00000000-0000-0000-0000-000000000000}|\u003CSolution\u003E|programmersCalculator||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
     },
     {
@@ -20,10 +24,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\ambig\\source\\repos\\programmersCalculator\\binaryConversions.py||{8B382828-6202-11D1-8870-0000F87579D2}|",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:binaryConversions.py||{8B382828-6202-11D1-8870-0000F87579D2}|"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{683D0463-054B-4BBF-8BD4-3A79EBE509C1}|programmersCalculator.pyproj|C:\\Users\\ambig\\source\\repos\\programmersCalculator\\programmersCalculator.pyproj||{B270807C-D8C6-49EB-8EBE-8E8D566637A1}|d3b8505a-a2a7-49ed-b2c1-400136801ec6",
-      "RelativeMoniker": "D:0:0:{683D0463-054B-4BBF-8BD4-3A79EBE509C1}|programmersCalculator.pyproj|solutionrelative:programmersCalculator.pyproj||{B270807C-D8C6-49EB-8EBE-8E8D566637A1}|d3b8505a-a2a7-49ed-b2c1-400136801ec6"
     }
   ],
   "DocumentGroupContainers": [
@@ -33,7 +33,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -45,20 +45,33 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ieee754Conversions.py",
+              "DocumentMoniker": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\ieee754Conversions.py",
+              "RelativeDocumentMoniker": "ieee754Conversions.py",
+              "ToolTip": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\ieee754Conversions.py",
+              "RelativeToolTip": "ieee754Conversions.py",
+              "ViewState": "AgIAAAEAAAAAAAAAAAAiwAIAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
+              "WhenOpened": "2026-08-12T13:41:12.804Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 0,
               "Title": "fpgaCalculator.py",
               "DocumentMoniker": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\fpgaCalculator.py",
               "RelativeDocumentMoniker": "fpgaCalculator.py",
               "ToolTip": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\fpgaCalculator.py",
               "RelativeToolTip": "fpgaCalculator.py",
-              "ViewState": "AgIAAEUCAAAAAAAAAAAUwEwCAAA7AAAAAAAAAA==",
+              "ViewState": "AgIAACkAAAAAAAAAAAAewDAAAAAXAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
               "WhenOpened": "2026-08-12T05:43:01.492Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "testbench.py",
               "DocumentMoniker": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\testbench.py",
               "RelativeDocumentMoniker": "testbench.py",
@@ -70,7 +83,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "binaryConversions.py",
               "DocumentMoniker": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\binaryConversions.py",
               "RelativeDocumentMoniker": "binaryConversions.py",
@@ -82,7 +95,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "build_exe.py",
               "DocumentMoniker": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\build_exe.py",
               "RelativeDocumentMoniker": "build_exe.py",
@@ -94,15 +107,14 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "programmersCalculator",
               "DocumentMoniker": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\programmersCalculator.pyproj",
               "RelativeDocumentMoniker": "programmersCalculator.pyproj",
               "ToolTip": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\programmersCalculator.pyproj",
               "RelativeToolTip": "programmersCalculator.pyproj",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2026-08-10T21:32:35.125Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-08-10T21:32:35.125Z"
             }
           ]
         }

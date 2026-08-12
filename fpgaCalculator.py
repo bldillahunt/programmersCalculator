@@ -8,6 +8,7 @@ from ieee754Conversions import float_to_ieee754_hex
 from decimal import Decimal
 import time
 from fixedpoint import FixedPoint
+import math
 
 class FpgaCalculator:
 	def __init__(self, root):
@@ -42,10 +43,14 @@ class FpgaCalculator:
 		self.operand2_present = False
 		self.math_operation = ""
 		self.button_push_result = ""
+		self.MAX_FLOAT_SINGLE = 3.4028234663852886e+38
 	def create_widgets(self):
 		# 1. Main Display
 		main_display_frame = ttk.Frame(self.root, padding=10)
 		main_display_frame.pack(fill="x")
+		
+		main_display_label = ttk.Label(main_display_frame, text="Input Window")
+		main_display_label.pack(side="top", anchor="w", pady=(0, 5)) 
 		
 		self.main_display = ttk.Entry(main_display_frame, textvariable=self.main_display_var, font=("Courier", 12), justify="right")
 		self.main_display.pack(fill="x", ipady=10)
@@ -63,6 +68,9 @@ class FpgaCalculator:
 		# 2. Secondary display
 		aux_display_frame = ttk.Frame(self.root, padding=10)
 		aux_display_frame.pack(fill="x")
+		
+		aux_display_label = ttk.Label(aux_display_frame, text="Output Window")
+		aux_display_label.pack(side="top", anchor="w", pady=(0, 5)) 
 		
 		self.aux_display = ttk.Entry(aux_display_frame, textvariable=self.aux_display_var, font=("Courier", 12), justify="right")
 		self.aux_display.pack(fill="x", ipady=10)
@@ -255,7 +263,9 @@ class FpgaCalculator:
 		elif (self.input_mode.get() == "FP64"):
 			operand_float = ieee754_hex_to_float(input_string, True)
 		else:
+			operand_float = 0
 			print('Unknown data format for operand')
+			
 		return operand_float
 
 	def get_float_operands(self, operand1, operand2, operator):
@@ -306,10 +316,17 @@ class FpgaCalculator:
 			else:
 				result = integer_product
 		elif (operator == "/"):
-			result = operand1 / operand2
+			if (operand2 != 0):
+				result = operand1 / operand2
+			else:
+				result = "ERROR"
 		else:
 			result = operand1
-			
+
+		if (result != "ERROR") and ((self.input_mode.get() == "FP32") or (self.input_mode.get() == "FP64")):
+			if (math.isinf(result) or math.isnan(result)):
+				result = "ERROR"
+					
 		return result
 		
 	def parse_input_string(self, input_string):
@@ -402,7 +419,10 @@ class FpgaCalculator:
 		elif (self.output_mode.get() == "BIN"):
 			output_data = float.hex(input_float)
 		elif (self.output_mode.get() == "FP32"):
-			output_data = float_to_ieee754_hex(input_float, False)
+			if (abs(input_float) <= self.MAX_FLOAT_SINGLE):
+				output_data = float_to_ieee754_hex(input_float, False)
+			else:
+				output_data = "ERROR"
 		elif (self.output_mode.get() == "FP64"):
 			output_data = float_to_ieee754_hex(input_float, True)
 		else:
