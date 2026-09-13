@@ -1,14 +1,14 @@
 import tkinter as tk
 from tkinter import ttk
 import struct
-from binaryConversions import binary_to_fixed_point
-from binaryConversions import fixed_point_to_binary
-from ieee754Conversions import ieee754_hex_to_float
-from ieee754Conversions import float_to_ieee754_hex
-from decimal import Decimal
 import time
-from fixedpoint import FixedPoint
 import math
+import numpy as np
+from dataclasses import dataclass
+from typing import List, Literal
+from binary_support import precision_profile, lookup_table, twos_complement, binary_string_to_int_list, int_list_to_binary_string, binary_point_removal, twos_complement_bin_rational
+from binary_conversions import real_to_twos_comp_binary, hexadecimal_to_binary, ieee754_hex_to_binary, binary_to_real, binary_to_hexadecimal, binary_to_ieee754
+from binary_math import binary_division, binary_multiplier, binary_adder, binary_subtraction
 
 class FpgaCalculator:
 	def __init__(self, root):
@@ -44,6 +44,18 @@ class FpgaCalculator:
 		self.math_operation = ""
 		self.button_push_result = ""
 		self.MAX_FLOAT_SINGLE = 3.4028234663852886e+38
+		self.MAX_FLOAT_DOUBLE = 1.7976931348623157e+308
+		self.integer_component = 0
+		self.float_sign1 = 0
+		self.exponent_op1 = 0
+		self.mantissa_op1 = 0
+		self.float_sign2 = 0
+		self.exponent_op2 = 0
+		self.mantissa_op2 = 0
+		self.float_sign_result = 0
+		self.exponent_op_result = 0
+		self.mantissa_op_result = 0
+		self.current_profile = precision_profile["SINGLE"]
 	def create_widgets(self):
 		# 1. Main Display
 		main_display_frame = ttk.Frame(self.root, padding=10)
@@ -136,8 +148,6 @@ class FpgaCalculator:
 			bin_math_error = False
 			self.nibble_size = self.int_bits.get()//4
 			
-			print("operand2 present ", self.operand2_present)
-			
 			# Error checking
 			if (self.input_mode.get() == "REAL"):
 				operand1_data_error = self.verify_real_input(operand1)
@@ -173,11 +183,15 @@ class FpgaCalculator:
 				elif (self.operator_present == True) and (self.operand2_present == False):
 					operand2_data_error = True
 			elif (self.input_mode.get() == "FP32"):
+				self.exponent_size = 7
+				self.mantissa_size = 23
 				operand1_data_error = self.verify_fp32_input(operand1)
 				
 				if (self.operand2_present == True):
 					operand2_data_error = self.verify_fp32_input(operand2)
 			elif (self.input_mode.get() == "FP64"):
+				self.exponent_size = 11
+				self.mantissa_size = 52
 				operand1_data_error = self.verify_fp64_input(operand1)
 				
 				if (self.operand2_present == True):
@@ -186,58 +200,16 @@ class FpgaCalculator:
 			operator_error = self.verify_operator(operator)
 			
 			if (operand1_data_error == False) and (operand2_data_error == False) and (operator_error == False):
-				if (self.input_mode.get() == "BIN"):
-					self.integer_size1, self.fraction_size1 = self.count_input_bits(operand1)
-
-					if (self.operand2_present == True):
-						self.integer_size2, self.fraction_size2 = self.count_input_bits(operand2)
-				else:
-					operand1_float, operand2_float = self.get_float_operands(operand1, operand2, operator)	
+				operand1_binary = self.convert_to_binary(operand1, self.input_mode.get())
 				
-				if (self.input_mode.get() == "BIN"):
-#					if (self.operand2_present == True):
-					result_math, result_int_size, result_frac_size, bin_math_error = self.calculate_binary_result(operand1, operand2, operator)
-#					else:
-#						result_math, result_int_size, result_frac_size, bin_math_error = self.calculate_binary_result(operand1, '01', '/')
-#						operand1_int = binary_to_fixed_point(operand1, self.integer_size1, self.fraction_size1)
-#						result_math = operand1_int >> self.fraction_size1
-#						result_int_size = self.integer_size1
-#						result_frac_size = self.fraction_size1
-#						bin_math_error = False
-					
-					if (bin_math_error == False):
-						result_requested = self.convert_output_binary(result_math, result_int_size, result_frac_size)
-					else:
-						result_requested = "ERROR"
+				if (self.operand2_present == True):
+					operand2_binary = self.convert_to_binary(operand2, self.input_mode.get())
+					binary_result = self.binary_math_operation(operand1_binary, operand2_binary, operator)
+					calculator_result = self.convert_from_binary(binary_result, self.output_mode.get())
 				else:
-					if (self.operand2_present == True):
-						result_math = self.calculate_real_result(operand1_float, operand2_float, operator)
-					else:
-						result_math = operand1_float
-					
-					if (result_math != "ERROR"):
-						if (self.output_mode.get() != "BIN"):
-							result_requested = self.convert_output_float(result_math)
-						else:
-							result_scaled_int = int(result_math * 2**self.frac_bits.get())
-							result_requested = self.convert_output_binary(result_scaled_int, self.int_bits.get(), self.frac_bits.get())
-						
-						bin_math_error = False
-					else:
-						bin_math_error = True
+					calculator_result = self.convert_from_binary(operand1_binary, self.output_mode.get())
 
-#				self.main_display_var.set("")
-#				self.main_display_var.set(result_requested)
-
-				if (bin_math_error == False):
-					self.aux_display_var.set(result_requested)
-				else:
-					self.aux_display_var.set("ERROR")
-					
-#					if (self.input_mode.get() == "BIN") and (result_frac_size > 0) and (self.operand2_present == True):
-#						self.aux_display_var.set(result_math/2**result_frac_size)
-#					else:								
-#						self.aux_display_var.set(result_math)
+				self.aux_display_var.set(calculator_result)
 			else:
 				self.main_display_var.set("")
 				self.aux_display_var.set("ERROR")
@@ -249,85 +221,6 @@ class FpgaCalculator:
 		raw_input = self.main_display_var.get()
 		operand1, operator, operand2 = self.parse_input_string(raw_input)
 		return operand1, operand2, operator
-
-	def convert_text_to_type(self, input_string):
-		if (self.input_mode.get() == "REAL"):
-			operand_float = float(input_string)
-		elif (self.input_mode.get() == "HEX"):
-			if (any(item in input_string[0] for item in self.hex_negative_list)):
-				operand_float = int(input_string, 16) - (1 << (len(input_string*4)))
-			else:
-				operand_float = int(input_string, 16)
-		elif (self.input_mode.get() == "FP32"):
-			operand_float = ieee754_hex_to_float(input_string, False)
-		elif (self.input_mode.get() == "FP64"):
-			operand_float = ieee754_hex_to_float(input_string, True)
-		else:
-			operand_float = 0
-			print('Unknown data format for operand')
-			
-		return operand_float
-
-	def get_float_operands(self, operand1, operand2, operator):
-		operand1_float = self.convert_text_to_type(operand1)
-		
-		if self.operand2_present == True:			
-			operand2_float = self.convert_text_to_type(operand2)
-		else:
-			operand2_float = 0
-			
-		return operand1_float, operand2_float
-		
-	def calculate_real_result(self, operand1, operand2, operator):
-		# TODO: Implement expression splitting (val1, op, val2) 
-		# and conversions based on self.input_mode / self.output_mode
-		print(operand1, operand2, operator)
-		
-		if (operator == "+"):
-			integer_sum = operand1 + operand2
-				
-			if (self.input_mode.get() == "HEX"):
-				if (integer_sum > (2**(self.int_bits.get()+self.frac_bits.get()-1)-1)) or (integer_sum < -2**(self.int_bits.get()+self.frac_bits.get()-1)):
-					result = "ERROR"
-				else:
-					result = integer_sum
-			else:
-				result = integer_sum
-		elif (operator == "-"):
-			integer_difference = operand1 - operand2
-			
-			if (self.input_mode.get() == "HEX"):
-				if (integer_difference < -2**(self.int_bits.get()+self.frac_bits.get()-1)):
-					result = "ERROR"
-				else:
-					result = integer_difference
-			else:
-				result = integer_difference
-		elif (operator == "*"):
-			integer_product = operand1 * operand2
-			product_int_size = self.int_bits.get()
-			product_frac_size = self.frac_bits.get()
-
-			if (self.input_mode.get() == "HEX"):
-				if ((integer_product >> product_frac_size) > (2**(product_int_size+product_frac_size-1)-1)) or ((integer_product >> product_frac_size) < -2**(product_int_size+product_frac_size-1)):
-					result = "ERROR"
-				else:
-					result = integer_product
-			else:
-				result = integer_product
-		elif (operator == "/"):
-			if (operand2 != 0):
-				result = operand1 / operand2
-			else:
-				result = "ERROR"
-		else:
-			result = operand1
-
-		if (result != "ERROR") and ((self.input_mode.get() == "FP32") or (self.input_mode.get() == "FP64")):
-			if (math.isinf(result) or math.isnan(result)):
-				result = "ERROR"
-					
-		return result
 		
 	def parse_input_string(self, input_string):
 		# No regex options would work here, so this is a brute force state machine
@@ -400,264 +293,6 @@ class FpgaCalculator:
 					self.operand2_present = True
 					return left, op, right
 		
-	def convert_output_float(self, input_float):
-		print(input_float)
-		
-		if (self.output_mode.get() == "REAL"):
-			if (self.input_mode.get() == "HEX"):
-				input_float /=(2**self.frac_bits.get())
-				
-			output_data = input_float
-		elif (self.output_mode.get() == "HEX"):
-			input_scaled = int(input_float * (2**self.frac_bits.get()))
-			print('input_scaled = ', input_scaled)
-			mask = (1 << (self.int_bits.get() + self.frac_bits.get())) - 1
-			print('mask = ', mask)
-			input_masked = input_scaled & mask
-			print('input_masked = ', input_masked)
-			output_data = f"{input_masked:X}"
-		elif (self.output_mode.get() == "BIN"):
-			output_data = float.hex(input_float)
-		elif (self.output_mode.get() == "FP32"):
-			if (abs(input_float) <= self.MAX_FLOAT_SINGLE):
-				output_data = float_to_ieee754_hex(input_float, False)
-			else:
-				output_data = "ERROR"
-		elif (self.output_mode.get() == "FP64"):
-			output_data = float_to_ieee754_hex(input_float, True)
-		else:
-			print('Unknown data format for output')
-		
-		return output_data
-	
-	def calculate_binary_result(self, input_string1, input_string2, operator):
-		binary_error = False
-		
-		# 1. Align the binary points
-		if (self.fraction_size1 > self.fraction_size2) and (self.fraction_size2 > 0):
-			padded_integer1 = input_string1
-			padded_integer2 = input_string2 + ("0" * (self.fraction_size1 - self.fraction_size2))
-			fractional_bits = self.fraction_size1
-			fraction_difference = self.fraction_size1 - self.fraction_size2
-		elif (self.fraction_size1 < self.fraction_size2) and (self.fraction_size1 > 0):
-			padded_integer1 = input_string1 + ("0" * (self.fraction_size2 - self.fraction_size1))
-			padded_integer2 = input_string2
-			fractional_bits = self.fraction_size2
-			fraction_difference = self.fraction_size2 - self.fraction_size1
-		else:
-			padded_integer1 = input_string1
-			padded_integer2 = input_string2
-			fractional_bits = self.fraction_size1
-			fraction_difference = 0
-
-		if (self.integer_size1 == 1) and (input_string1[0] == "0") and (self.fraction_size1 > 0):
-			math_int_size1 = 0
-		else:
-			math_int_size1 = self.integer_size1
-			
-		if (self.integer_size2 == 1) and (input_string2[0] == "0") and (self.fraction_size2 > 0):
-			math_int_size2 = 0
-		else:
-			math_int_size2 = self.integer_size2
-			
-		# 2. Drop the binary point and convert to integer
-		if (math_int_size1 == 0):
-			integer_val1 = int(padded_integer1[2:], 2)
-			scaled_integer1 = integer_val1
-		elif (self.fraction_size1 > 0):
-			integer_val1 = binary_to_fixed_point(padded_integer1, math_int_size1, fractional_bits)
-			scaled_integer1 = integer_val1
-		else:
-			integer_val1 = int(padded_integer1, 2)
-			
-			if (integer_val1 & (1 << (self.integer_size1 + fraction_difference - 1))) and (self.integer_size1 > 0):
-				scaled_integer1 = integer_val1 - (1 << (self.integer_size1 + fraction_difference))		
-			else:
-				scaled_integer1 = integer_val1
-
-		extended_integer1 = scaled_integer1
-		
-		if (operator != "") and (self.operand2_present == True):
-			if (math_int_size2 == 0):
-				integer_val2 = int(padded_integer2[2:], 2)
-				scaled_integer2 = integer_val2
-			elif (self.fraction_size2 > 0):
-				integer_val2 = binary_to_fixed_point(padded_integer2, math_int_size2, fractional_bits)
-				scaled_integer2 = integer_val2
-			else:
-				integer_val2 = int(padded_integer2, 2)
-
-				if (integer_val2 & (1 << (self.integer_size2 + fraction_difference - 1))):
-					scaled_integer2 = integer_val2 - (1 << (self.integer_size2 + fraction_difference))
-				else:
-					scaled_integer2 = integer_val2
-		else:
-			scaled_integer2 = 0
-		
-		# Sign extend
-#		if (input_string2[0] == '1'):
-#			extended_integer2 = scaled_integer2 - (1 << (math_int_size + fractional_bits))
-#		else:
-		extended_integer2 = scaled_integer2
-		
-		# DEBUG
-		print("MATH INPUT VALUES")
-		print("Counts")
-		print(fractional_bits, math_int_size1, math_int_size2)
-		print("Operand1")
-		print(padded_integer1, integer_val1, scaled_integer1)
-	
-		if (input_string2 != ""):
-			print("Operand2")
-			print(padded_integer2, integer_val2, scaled_integer2)
-		# DEBUG
-		
-		if (operator == "+"):
-			integer_sum = extended_integer1 + extended_integer2
-			integer_size = max(math_int_size1, math_int_size2) + 1
-			fraction_size = fractional_bits
-			result = integer_sum
-		elif (operator == "-"):
-			difference = extended_integer1 - extended_integer2
-			integer_size = max(math_int_size1, math_int_size2)
-			fraction_size = fractional_bits
-			result = difference
-		elif (operator == "*"):
-			product = extended_integer1 * extended_integer2
-			integer_size = math_int_size1 + math_int_size2
-			fraction_size = fractional_bits * 2
-			result = product
-		elif (operator == "/"):
-			if (extended_integer2 == 0):
-#				raise ZeroDivisionError("Cannot divide by zero.")			
-				self.aux_display_var.set("DIVIDE BY ZERO")
-				binary_error = True
-				result = 0
-				integer_size = 0
-				fraction_size = 0
-				return result, integer_size, fraction_size, binary_error
-
-			if (self.output_mode.get() == "REAL"):
-				if (self.integer_size1 > 0):
-					input_string1_upscaled = input_string1[:self.integer_size1] + input_string1[self.integer_size1+1:]
-					integer_size = 0
-					fraction_size = 0
-				else:
-					input_string1_upscaled = "0" + input_string1[self.integer_size1+2:]
-					integer_size = 0
-					fraction_size = 0
-				
-				if (self.integer_size2 > 0):
-					input_string2_upscaled = input_string2[:self.integer_size2] + input_string2[self.integer_size2+1:]
-					integer_size = 0
-					fraction_size = 0
-				else:
-					input_string2_upscaled = "0" + input_string2[self.integer_size2+2:]
-					integer_size = 0
-					fraction_size = 0
-					
-				input_string1_int = int(input_string1_upscaled, 2)
-				input_string2_int = int(input_string2_upscaled, 2)
-					
-				# Sign extend
-				if (input_string1[0] == '1'):
-					numerator = input_string1_int - (1 << (self.integer_size1 + self.fraction_size1))
-				else:
-					numerator = input_string1_int
-
-				if (input_string2[0] == '1'):
-					denominator = input_string2_int  - (1 << (self.integer_size2 + self.fraction_size2))
-				else:					
-					denominator = input_string2_int
-					
-				print(input_string1_upscaled, input_string2_upscaled, input_string1_int, input_string2_int)
-				
-				print('numerator = ', numerator, 'denominator = ', denominator)
-				result = (float(numerator)/2**self.fraction_size1) / (float(denominator)/2**self.fraction_size2)
-			else:
-				integer_size = max(math_int_size1, math_int_size2)
-				
-#				if (self.fraction_size1 > self.fraction_size2):
-#					fraction_size = self.fraction_size1 - self.fraction_size2
-#				else:
-				fraction_size = self.frac_bits.get()
-			
-				# Scale the numerator using the default fractional value				
-				numerator = Decimal(extended_integer1)
-				denominator = Decimal(extended_integer2)
-				quotient = numerator / denominator
-				result = int(quotient * (2**fraction_size))
-				print("Divider math", numerator, denominator, quotient)
-		else:
-			integer_size = math_int_size1
-			fraction_size = fractional_bits
-			result = extended_integer1
-
-		print('Binary math output = ', result, 'int size = ', integer_size, 'fraction_size = ', fraction_size)
-		return result, integer_size, fraction_size, binary_error
-		 
-	def convert_output_binary(self, value, int_size, frac_size):
-		if (self.output_mode.get() == "REAL"):
-			if (self.math_operation != ''):
-				output_data = float(value)
-			else:
-				output_data = float(value)/2**frac_size
-		elif (self.output_mode.get() == "HEX"):
-#			input_sign_extended = value - (1 << (int_size + frac_size))
-			input_masked = value & ((1 << (self.int_bits.get() + self.frac_bits.get())) - 1)
-			output_data = f"{input_masked:X}"
-			print("value = ", value, "output_data = ", "input_masked = ", input_masked, output_data)
-		elif (self.output_mode.get() == "BIN"):
-			total_bits = int_size + frac_size
-
-			# 3. Apply the two's complement mask
-			mask = (1 << total_bits) - 1
-			binary_int = value & mask
-			print('value = ', value, 'binary_int = ', binary_int)
-
-			# 4. Format as binary string and manually insert the binary point
-			if (frac_size > 0):
-				binary_str = f"{binary_int:0{total_bits}b}"
-				integer_part = binary_str[:-frac_size]
-				fraction_part = binary_str[-frac_size:]
-				output_data = f"{integer_part}.{fraction_part}"
-			else:
-				output_data = f"{binary_int:0{total_bits}b}"
-		elif (self.output_mode.get() == "FP32"):
-			value_float = float(value/2**frac_size)
-			packed = struct.pack('>f', value_float)
-			output_data = f"0x{struct.unpack('>I', packed)[0]:08X}"
-		elif (self.output_mode.get() == "FP64"):
-			value_float = float(value/2**frac_size)
-			packed = struct.pack('>d', value_float)
-			output_data = f"0x{struct.unpack('>Q', packed)[0]:16X}"
-		
-		print('Binary converter output = ', output_data)
-		return output_data
-		
-	def count_input_bits(self, input_string):
-		if (len(input_string) > 1):
-			split_list = ["", ""] 
-			
-			if '.' in input_string:
-				split_list = input_string.split('.')
-			else:
-				split_list[0] = input_string
-				split_list[1] = ""
-
-			if (input_string[0] == '0') and (input_string[1] == '.'):
-				int_bit_count = 0;
-			else:
-				int_bit_count = len(split_list[0])
-
-			frac_bit_count = len(split_list[1])
-		else:
-			int_bit_count = 1
-			frac_bit_count = 0
-			
-		print('Int bit count = ', int_bit_count, 'frac_bit_count = ', frac_bit_count)
-		return int_bit_count, frac_bit_count
-
 	def verify_real_input(self, input_string):
 		try:
 			float(input_string)
@@ -700,9 +335,151 @@ class FpgaCalculator:
 	def verify_operator(self, input_string):
 		return input_string not in "+-*/"
 
-	def twos_complement(self, integer_input):
-		return (integer_input ^ (-1) + 1)
+	def convert_to_binary(self, operand, input_mode):
+		if (input_mode == "REAL"):
+			n_binary_string = real_to_twos_comp_binary(operand, self.int_bits.get(), self.frac_bits.get())
+			n_int_list = binary_string_to_int_list(n_binary_string)
+		elif (input_mode == "HEX"):
+			n_binary_string = hexadecimal_to_binary(operand, self.int_bits.get(), self.frac_bits.get(), lookup_table)
+			n_int_list = binary_string_to_int_list(n_binary_string)
+		elif (input_mode == "FP32"):
+			self.current_profile = precision_profile["SINGLE"]
+			p = self.current_profile
+			n_binary_string = ieee754_hex_to_binary(operand, p, lookup_table)
+			n_int_list = n_binary_string
+		elif (input_mode == "FP64"):
+			self.current_profile = precision_profile["DOUBLE"]
+			p = self.current_profile
+			n_binary_string = ieee754_hex_to_binary(operand, p, lookup_table)
+			n_int_list = n_binary_string
+		else: 
+			n_int_list = binary_string_to_int_list(operand)
+			
+		return n_int_list
+	
+	def binary_math_operation(self, operand1, operand2, operator):
+		if (operator == "/"):
+			if (self.output_mode.get() == "FP32"):
+				self.current_profile = precision_profile["SINGLE"]
+				p = self.current_profile
 
+				if (1 + p.exponent_size + p.mantissa_size) < (self.int_bits.get() + self.frac_bits.get()):
+					max_size = self.int_bits.get() + self.frac_bits.get()
+				else:
+					max_size = 64
+			elif (self.output_mode.get() == "FP64"):
+				self.current_profile = precision_profile["DOUBLE"]
+				p = self.current_profile
+				
+				if (1 + p.exponent_size + p.mantissa_size) < (self.int_bits.get() + self.frac_bits.get()):
+					max_size = self.int_bits.get() + self.frac_bits.get()
+				else:
+					max_size = 128
+			else:
+				max_size = self.int_bits.get() + self.frac_bits.get()
+			
+			if ('.' in operand1) or ('.' in operand2):
+				operand1_no_bin_point, operand2_no_bin_point, op1_radix_index, op2_radix_index, fraction_size = binary_point_removal(operand1, operand2)
+			else:
+				operand1_no_bin_point = operand1
+				operand2_no_bin_point = operand2
+				fraction_size = 0
+			
+			if (operand1[0] == 1):
+				operand1_2s_comp, op1_carry = twos_complement(operand1_no_bin_point)
+				sign_operand1 = 1
+			else:
+				operand1_2s_comp = operand1_no_bin_point
+				sign_operand1 = 0
+			
+			if (operand2[0] == 1):
+				operand2_2s_comp, op2_carry = twos_complement(operand2_no_bin_point)
+				sign_operand2 = 1
+			else:
+				operand2_2s_comp = operand2_no_bin_point
+				sign_operand2 = 0
+			
+			print("Fraction size = ", fraction_size)
+			
+			if ('.' in operand1):
+				operand1_bin_point = operand1_2s_comp[:(len(operand1_2s_comp) - fraction_size)] + ['.'] + operand1_2s_comp[(len(operand1_2s_comp) - fraction_size):]
+			else:
+				if (len(operand1) < len(operand1_2s_comp)):
+					operand1_bin_point = operand1_2s_comp[:len(operand1)] + ['.'] + operand1_2s_comp[len(operand1):]
+				else:
+					operand1_bin_point = operand1_2s_comp + ['.']
+
+			if ('.' in operand2):
+				operand2_bin_point = operand2_2s_comp[:(len(operand2_2s_comp) - fraction_size)] + ['.'] + operand2_2s_comp[(len(operand2_2s_comp) - fraction_size):]
+			else:
+				if (len(operand2) < len(operand2_2s_comp)):
+					operand2_bin_point = operand2_2s_comp[:len(operand2)] + ['.'] + operand2_2s_comp[len(operand2):]
+				else:
+					operand2_bin_point = operand2_2s_comp + ['.']
+			
+			quotient = binary_division(operand1_bin_point, operand2_bin_point, max_size)
+			
+			print("quotient raw = ", "".join(map(str, quotient)))
+			
+			if ((sign_operand1 ^ sign_operand2) == 1):
+				quotient_no_bin_point, null_output, quotient_radix_index, null_radix_index, fraction_size = binary_point_removal(quotient, [''])
+				
+				if (self.int_bits.get() > quotient_radix_index):
+					quotient_extended = [0]*(self.int_bits.get() - quotient_radix_index) + quotient_no_bin_point
+					quotient_2s_comp, carry_quotient = twos_complement(quotient_extended)
+					quotient_2s_comp_bin_point = quotient_2s_comp[:self.int_bits.get()] + ['.'] + quotient_2s_comp[self.int_bits.get():]
+				else:
+					quotient_extended = quotient_no_bin_point
+					quotient_2s_comp, carry_quotient = twos_complement(quotient_extended)
+					quotient_2s_comp_bin_point = quotient_2s_comp[:quotient_radix_index] + ['.'] + quotient_2s_comp[quotient_radix_index:]
+				
+				
+				print("quotient 2s comp = ", "".join(map(str, quotient_2s_comp_bin_point)))
+				math_result_2s_comp = quotient_2s_comp_bin_point
+			else:
+				math_result_2s_comp = quotient
+			
+			print("quotient = ", "".join(map(str, math_result_2s_comp)))
+			math_result = math_result_2s_comp
+		elif (operator == "*"):
+			math_result = binary_multiplier(operand1, operand2)
+		elif (operator == "+"):
+			addend_a, addend_b, a_radix_index, b_radix_index, fraction_size = binary_point_removal(operand1, operand2)
+			
+			if (a_radix_index > b_radix_index):
+				integer_size = a_radix_index
+			elif (b_radix_index >= a_radix_index):
+				integer_size = b_radix_index
+			
+			n_sum, n_carry = binary_adder(addend_a, addend_b)
+			
+			if (n_carry == 1):
+				sum_result = [n_carry] + n_sum
+			else:
+				sum_result = n_sum
+			
+			binary_point_index = len(sum_result) - fraction_size
+			math_result = sum_result[:binary_point_index] + ['.'] + sum_result[binary_point_index:]
+		elif (operator == "-"):
+			math_result = binary_subtraction(operand1, operand2)
+	
+		return math_result
+	
+	def convert_from_binary(self, operand, output_mode):
+		if (output_mode == "REAL"):
+			conversion_result = binary_to_real(operand)
+		elif (output_mode == "HEX"):
+			conversion_result = binary_to_hexadecimal(operand, lookup_table)
+		elif (output_mode == "FP32"):
+			conversion_result = binary_to_ieee754(operand, precision_profile["SINGLE"], lookup_table)
+		elif (output_mode == "FP64"):
+			conversion_result = binary_to_ieee754(operand, precision_profile["DOUBLE"], lookup_table)
+		else:
+			operand_int_list = int_list_to_binary_string(operand, len(operand))
+			conversion_result = "".join(operand_int_list)
+		
+		return conversion_result                                                                                                                  
+	
 	def input_mode_changed(self):
 		mode = self.input_mode.get()
 
