@@ -139,7 +139,8 @@ class TestBench(unittest.TestCase):
             TestCase('16', '16', 'BIN', 'REAL', '0.000000000000001/1', '-3.0517578125e-05'), 
             TestCase('16', '16', 'BIN', 'REAL', '11111001.001/0.0101001', '-21.463414634146343') 
         ] 
-        for test in test_cases_bin_real: 
+ 
+ 		for test in test_cases_bin_real: 
             self.app.input_mode.set(test.input_mode) 
             self.app.output_mode.set(test.output_mode) 
             self.app.int_bits.set(test.integer_bits) 

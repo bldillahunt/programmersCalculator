@@ -234,7 +234,7 @@ class FpgaCalculator:
 		self.operator_present = False
 		self.operand2_present = False
 		
-		print('parser input string = ', input_string)
+#		print('parser input string = ', input_string)
 		
 		while (True):
 			match state:
@@ -399,7 +399,7 @@ class FpgaCalculator:
 				operand2_2s_comp = operand2_no_bin_point
 				sign_operand2 = 0
 			
-			print("Fraction size = ", fraction_size)
+#			print("Fraction size = ", fraction_size)
 			
 			if ('.' in operand1):
 				operand1_bin_point = operand1_2s_comp[:(len(operand1_2s_comp) - fraction_size)] + ['.'] + operand1_2s_comp[(len(operand1_2s_comp) - fraction_size):]
@@ -419,7 +419,7 @@ class FpgaCalculator:
 			
 			quotient = binary_division(operand1_bin_point, operand2_bin_point, max_size)
 			
-			print("quotient raw = ", "".join(map(str, quotient)))
+#			print("quotient raw = ", "".join(map(str, quotient)))
 			
 			if ((sign_operand1 ^ sign_operand2) == 1):
 				quotient_no_bin_point, null_output, quotient_radix_index, null_radix_index, fraction_size = binary_point_removal(quotient, [''])
@@ -434,12 +434,12 @@ class FpgaCalculator:
 					quotient_2s_comp_bin_point = quotient_2s_comp[:quotient_radix_index] + ['.'] + quotient_2s_comp[quotient_radix_index:]
 				
 				
-				print("quotient 2s comp = ", "".join(map(str, quotient_2s_comp_bin_point)))
+#				print("quotient 2s comp = ", "".join(map(str, quotient_2s_comp_bin_point)))
 				math_result_2s_comp = quotient_2s_comp_bin_point
 			else:
 				math_result_2s_comp = quotient
 			
-			print("quotient = ", "".join(map(str, math_result_2s_comp)))
+#			print("quotient = ", "".join(map(str, math_result_2s_comp)))
 			math_result = math_result_2s_comp
 		elif (operator == "*"):
 			math_result = binary_multiplier(operand1, operand2)

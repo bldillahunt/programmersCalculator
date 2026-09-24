@@ -6,7 +6,7 @@ import math
 import numpy as np
 from dataclasses import dataclass
 from typing import List, Literal
-from binary_support import twos_complement_bin_rational, real_to_binary, hex_to_binary, int_list_to_binary_string, twos_complement, binary_string_to_int_list, list_to_string
+from binary_support import twos_complement_bin_rational, real_to_binary, hex_to_binary, int_list_to_binary_string, twos_complement, binary_string_to_int_list, list_to_string, remove_msbs
 
 # Wrapper for the real-to-binary converter that handles negative numbers	
 def real_to_twos_comp_binary(n, default_int_size, default_frac_size):
@@ -28,13 +28,16 @@ def hexadecimal_to_binary(n, integer_size, fraction_size, lookup_table):
 	else:
 		binary_string = []
 		
-		for i in range(len(n)):
+		for i in range(0, len(n)):
 			binary_string.append(hex_to_binary(n[i], lookup_table))
 
 		single_binary_string = "".join(binary_string)
 
 		integer_string = single_binary_string[:integer_size]
 		fraction_string = single_binary_string[integer_size:]
+		
+		print(binary_string, single_binary_string, integer_string, fraction_string)
+		
 		return integer_string + '.' + fraction_string
 
 # Converts an IEEE754 hexadecimal string to binary
@@ -47,7 +50,7 @@ def ieee754_hex_to_binary(ieee754_hex, p, lookup_table):
 	single_binary_string = "".join(binary_string)
 	
 	if '1' not in single_binary_string:
-		return "0"
+		return "0"*p.hexadecimal_size*4
 		
 	sign_bit = single_binary_string[0]
 	exponent = single_binary_string[1:p.exponent_size+1]
@@ -85,10 +88,10 @@ def ieee754_hex_to_binary(ieee754_hex, p, lookup_table):
 
 		if (sign_bit == '1'):
 			binary_int_twos_comp, carry = twos_complement(binary_int_list)
+			binary_output = [1] + ['.'] + binary_int_twos_comp
 		else:
 			binary_int_twos_comp = binary_int_list
-		
-		binary_output = [0] + ['.'] + binary_int_twos_comp
+			binary_output = [0] + ['.'] + binary_int_twos_comp
 	else:
 		binary_value = '01' + mantissa
 		binary_int_list = binary_string_to_int_list(binary_value)
@@ -98,11 +101,11 @@ def ieee754_hex_to_binary(ieee754_hex, p, lookup_table):
 		else:
 			binary_int_twos_comp = binary_int_list
 		
-		binary_output = [binary_int_twos_comp[0]] + ['.'] + binary_int_twos_comp[1:]
+		binary_output = binary_int_twos_comp[:2] + ['.'] + binary_int_twos_comp[2:]
 	
-	print(sign_bit, exponent, mantissa, shift_value)
+#	print(sign_bit, exponent, mantissa, shift_value)
 	
-	print(list_to_string(binary_output))
+#	print(list_to_string(binary_output))
 	return binary_output
 
 def binary_to_real(n):
@@ -190,7 +193,7 @@ def binary_to_hexadecimal(n, lut):
 	n_size += n_size_difference
 	
 	if (n_size_remainder != 0):
-		binary_value_padded = [0]*n_size_difference + binary_value
+		binary_value_padded = [n[0]]*n_size_difference + binary_value
 	else:
 		binary_value_padded = binary_value
 
@@ -208,14 +211,12 @@ def binary_to_hexadecimal(n, lut):
 
 def binary_to_ieee754(n, p, lookup_table):
 	sign_bit = n[0]
-
-#	print("n = ", list_to_string(n))
 	
 	if ('.' in n):
 		binary_point_index = n.index('.')
 		no_binary_point = False
 	else:
-		binary_point_index = 0
+		binary_point_index = len(n)
 		no_binary_point = True
 		
 	if (binary_point_index > 0):
@@ -224,43 +225,73 @@ def binary_to_ieee754(n, p, lookup_table):
 		n_no_binary_point = n[1:]
 	else:
 		n_no_binary_point = n
-
-#	print("n no binary point = ", list_to_string(n_no_binary_point))
 	
 	if (sign_bit == 1):
 		n_2s_comp, carry = twos_complement(n_no_binary_point)
 	else:
 		n_2s_comp = n_no_binary_point
 
-#	print("n 2s complement = ", list_to_string(n_2s_comp))
+	if (no_binary_point == False):
+		n_2s_comp_binary_point = n_2s_comp[:binary_point_index] + ['.'] + n_2s_comp[binary_point_index:]
+	else:
+		n_2s_comp_binary_point = n_2s_comp
 	
-	if (1 in n_2s_comp):
-		n_2s_comp_msb_index = n_2s_comp.index(1)
+	mantissa_offet = 1
+	n_stripped = remove_msbs(n_2s_comp_binary_point)
+
+	if ('.' in n_stripped):
+		n_stripped_binary_point_index = n_stripped.index('.')
+	else:
+		n_stripped_binary_point_index = len(n_stripped)
+		
+	if (1 in n_stripped):
+		n_2s_comp_msb_index = n_stripped.index(1)
 	else:
 		return "0" * p.hexadecimal_size
-	
-	n_2s_comp_size = len(n_2s_comp)
-	
-	if (n_2s_comp_size >= p.mantissa_size):
-		mantissa = n_2s_comp[n_2s_comp_msb_index+1:]
-	elif (n_2s_comp_size < p.mantissa_size):
-		mantissa = n_2s_comp[n_2s_comp_msb_index+1:] + [0]*(p.mantissa_size - n_2s_comp_size + 2)
 
-#	print("mantissa = ", list_to_string(mantissa))
+	if (no_binary_point == False):
+		n_2s_comp_size = len(n_stripped) - 1
+	else:
+		n_2s_comp_size = len(n_stripped)
 	
-	if (binary_point_index > n_2s_comp_msb_index):
-		shift_value = binary_point_index - n_2s_comp_msb_index
-	elif (n_2s_comp_msb_index >= binary_point_index):
-		shift_value = n_2s_comp_msb_index
-	
-	exponent = shift_value + p.exp_bias - 1
+	if (no_binary_point == False):
+		if (n_2s_comp_size >= p.mantissa_size):
+			if (n_stripped_binary_point_index > n_2s_comp_msb_index):
+				if ((n_2s_comp_size-2) >= p.mantissa_size):
+					mantissa = n_stripped[n_2s_comp_msb_index+mantissa_offet:n_stripped_binary_point_index] + n_stripped[n_stripped_binary_point_index+1:p.mantissa_size + (mantissa_offet + 1 + n_2s_comp_msb_index)]
+				else:
+					mantissa = n_stripped[n_2s_comp_msb_index+mantissa_offet:n_stripped_binary_point_index] + n_stripped[n_stripped_binary_point_index+1:] + [0]*(p.mantissa_size-(n_2s_comp_size-(mantissa_offet + 1)))
+			else:
+				mantissa = 	n_stripped[n_2s_comp_msb_index+mantissa_offet:n_2s_comp_msb_index+1+p.mantissa_size]
+		elif (n_2s_comp_size < p.mantissa_size):
+			if (n_stripped_binary_point_index > n_2s_comp_msb_index):
+				mantissa = n_stripped[n_2s_comp_msb_index+mantissa_offet:n_stripped_binary_point_index] + n_stripped[n_stripped_binary_point_index+1:] + [0]*(p.mantissa_size - (n_2s_comp_size - n_2s_comp_msb_index) + mantissa_offet + 1)
+			else:
+				mantissa = n_stripped[n_2s_comp_msb_index+mantissa_offet:] + [0]*(p.mantissa_size - (n_2s_comp_size - n_2s_comp_msb_index) + mantissa_offet + 1)
+	else:
+		if (n_2s_comp_size >= p.mantissa_size):
+			if ((n_2s_comp_size-2) >= p.mantissa_size):
+				mantissa = n_stripped[n_2s_comp_msb_index+mantissa_offet:n_stripped_binary_point_index] + n_stripped[n_stripped_binary_point_index+1:p.mantissa_size + (mantissa_offet + 1 + n_2s_comp_msb_index)]
+			else:
+				mantissa = n_stripped[n_2s_comp_msb_index+mantissa_offet:n_stripped_binary_point_index] + n_stripped[n_stripped_binary_point_index+1:] + [0]*(p.mantissa_size-(n_2s_comp_size-(mantissa_offet + 1)))
+		elif (n_2s_comp_size < p.mantissa_size):
+			mantissa = n_stripped[n_2s_comp_msb_index+mantissa_offet:] + [0]*(p.mantissa_size - (n_2s_comp_size - n_2s_comp_msb_index) + mantissa_offet + 1)
 
-#	print(exponent)
+	shift_value = n_stripped_binary_point_index - n_2s_comp_msb_index
 	
-	decimal_size = len(str(exponent)) - 1
+	if (shift_value > 0):
+		exponent = shift_value + p.exp_bias - 1
+	else:
+		exponent = shift_value + p.exp_bias
+	
 	exponent_binary = f"{exponent:0{p.exponent_size}b}"
 	exponent_int_list = binary_string_to_int_list(exponent_binary)
+	
+	if (len(exponent_int_list) < p.exponent_size):
+		exponent_int_list = [0]*(p.exponent_size - len(exponent_int_list)) + exponent_int_list
+		
 	ieee754_binary = [sign_bit] + exponent_int_list + mantissa[:p.mantissa_size]
 	
-	ieee754_hex_value = binary_to_hexadecimal(ieee754_binary, lookup_table)	
+	ieee754_hex_value = binary_to_hexadecimal(ieee754_binary, lookup_table)
+	
 	return ieee754_hex_value

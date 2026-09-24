@@ -20,7 +20,7 @@ class precision_parameters:
 	precision: Literal["SINGLE", "DOUBLE"]
 
 precision_profile = {
-					"SINGLE": precision_parameters(exponent_size = 7, mantissa_size = 23, exp_bias = 127, exp_mask = 0x7F, mantissa_mask = 0x7FFFFF, exp_nibble_size = 2, mantissa_nibble_size = 6, hexadecimal_size = 8, precision = "SINGLE"),
+					"SINGLE": precision_parameters(exponent_size = 8, mantissa_size = 23, exp_bias = 127, exp_mask = 0x7F, mantissa_mask = 0x7FFFFF, exp_nibble_size = 2, mantissa_nibble_size = 6, hexadecimal_size = 8, precision = "SINGLE"),
 					"DOUBLE": precision_parameters(exponent_size = 11,	mantissa_size = 52,	exp_bias = 1023, exp_mask = 0x7FF, mantissa_mask = 0xFFFFFFFFFFFFF, exp_nibble_size = 3, mantissa_nibble_size = 14, hexadecimal_size = 16, precision = "DOUBLE")
 					}
 
@@ -399,3 +399,21 @@ def binary_adder(n, addend):
 
 def list_to_string(n):
 	return "".join(map(str, n))
+
+def remove_msbs(n):
+	if (1 in n):
+		msb_index = n.index(1)
+	else:
+		msb_index = 0
+	
+	if ('.' in n):
+		binary_point_index = n.index('.')
+	else:
+		binary_point_index = len(n)
+	
+	if (msb_index < binary_point_index):
+		binary_value = [0] + n[msb_index:]
+	else:
+		binary_value = n[binary_point_index-1:]
+	
+	return binary_value

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 @dataclass
-class TestCase:
+class BinaryTestConfiguration:
 	integer_bits: str
 	fraction_bits: str
 	input_mode: str

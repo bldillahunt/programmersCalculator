@@ -12,7 +12,7 @@
     <Name>programmersCalculator</Name>
     <RootNamespace>programmersCalculator</RootNamespace>
     <TestFramework>unittest</TestFramework>
-    <UnitTestPattern>test*.py</UnitTestPattern>
+    <UnitTestPattern>test_bench.py</UnitTestPattern>
     <UnitTestRootDirectory>.</UnitTestRootDirectory>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
