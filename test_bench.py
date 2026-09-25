@@ -281,6 +281,122 @@ class TestBench(unittest.TestCase):
 		        # Compare them
 		        if col1 != col2:
 		            print(f"Mismatch at line {line_num}: Column 1 ({col1}) != Column 2 ({col2})")
+
+		#---------- MATH OPERATION TESTS ----------
+		# STEP 4
+		# Use the data from the output of step 1 above, pair them off, and then pass them through four times,
+		# once for each math operation
+		
+		math_operations = ["+", "-", "*", "/"]
+		
+		test_a_real_add = []
+		test_a_real_sub = []
+		test_a_real_mult = []
+		test_a_real_div = []
+		
+		test_a_real_lists = [test_a_real_add, test_a_real_sub, test_a_real_mult, test_a_real_div]
+
+		test_a_hex_add = []
+		test_a_hex_sub = []
+		test_a_hex_mult = []
+		test_a_hex_div = []
+		
+		test_a_hex_lists = [test_a_hex_add, test_a_hex_sub, test_a_hex_mult, test_a_hex_div]
+		
+		test_a_bin_add = []
+		test_a_bin_sub = []
+		test_a_bin_mult = []
+		test_a_bin_div = []
+		
+		test_a_bin_lists = [test_a_bin_add, test_a_bin_sub, test_a_bin_mult, test_a_bin_div]
+		
+		test_a_fp32_add = []
+		test_a_fp32_sub = []
+		test_a_fp32_mult = []
+		test_a_fp32_div = []
+		
+		test_a_fp32_lists = [test_a_fp32_add, test_a_fp32_sub, test_a_fp32_mult, test_a_fp32_div]
+		
+		test_a_fp64_add = []
+		test_a_fp64_sub = []
+		test_a_fp64_mult = []
+		test_a_fp64_div = []
+		
+		test_a_fp64_lists = [test_a_fp64_add, test_a_fp64_sub, test_a_fp64_mult, test_a_fp64_div]
+		
+		test_b_real_add = []
+		test_b_real_sub = []
+		test_b_real_mult = []
+		test_b_real_div = []
+		
+		test_b_real_lists = [test_b_real_add, test_b_real_sub, test_b_real_mult, test_b_real_div]
+
+		test_b_hex_add = []
+		test_b_hex_sub = []
+		test_b_hex_mult = []
+		test_b_hex_div = []
+		
+		test_b_hex_lists = [test_b_hex_add, test_b_hex_sub, test_b_hex_mult, test_b_hex_div]
+		
+		test_b_bin_add = []
+		test_b_bin_sub = []
+		test_b_bin_mult = []
+		test_b_bin_div = []
+		
+		test_b_bin_lists = [test_b_bin_add, test_b_bin_sub, test_b_bin_mult, test_b_bin_div]
+		
+		test_b_fp32_add = []
+		test_b_fp32_sub = []
+		test_b_fp32_mult = []
+		test_b_fp32_div = []
+		
+		test_b_fp32_lists = [test_b_fp32_add, test_b_fp32_sub, test_b_fp32_mult, test_b_fp32_div]
+		
+		test_b_fp64_add = []
+		test_b_fp64_sub = []
+		test_b_fp64_mult = []
+		test_b_fp64_div = []
+		
+		test_b_fp64_lists = [test_b_fp64_add, test_b_fp64_sub, test_b_fp64_mult, test_b_fp64_div]
+		
+		test_a_lists = [test_a_real_lists, test_a_hex_lists, test_a_bin_lists, test_a_fp32_lists, test_a_fp64_lists]
+		test_b_lists = [test_b_real_lists, test_b_hex_lists, test_b_bin_lists, test_b_fp32_lists, test_b_fp64_lists]
+		
+		for tests, test_a, test_b, pos_right, neg_right, pos_left, neg_left, int_size, frac_size in zip(test_cases, test_a_lists, test_b_lists, output_arrays_pos_right, output_arrays_neg_right, output_arrays_pos_left, output_arrays_neg_left, integer_sizes, fraction_sizes):	# 5 iterations
+			for math_a, math_b, op in zip(test_a, test_b, math_operations):	# 4 iterations
+				for i in range(0, len(pos_right)):
+					input_data_a = pos_right[i] + op + neg_left[i]
+					math_a.append(self.gui_entry_parameters(input_data_a, tests, "BIN", int_size, frac_size))
+					
+					print(len(pos_right), len(neg_right), len(pos_left), len(neg_left))
+					print(pos_right[i])
+					
+					if (op == '+'):
+						math_a_real_result = binary_to_real(binary_string_to_int_list(pos_right[i])) + binary_to_real(binary_string_to_int_list(neg_left[i]))
+					elif (op == '-'):
+						math_a_real_result = binary_to_real(binary_string_to_int_list(pos_right[i])) - binary_to_real(binary_string_to_int_list(neg_left[i]))
+					elif (op == '*'):
+						math_a_real_result = binary_to_real(binary_string_to_int_list(pos_right[i])) * binary_to_real(binary_string_to_int_list(neg_left[i]))
+					elif (op == '/'):
+						math_a_real_result = binary_to_real(binary_string_to_int_list(pos_right[i])) / binary_to_real(binary_string_to_int_list(neg_left[i]))
+					
+					if (math_a_real_result != math_a[i]):
+						print("Mismatch: output A = ", math_a[i], "actual = ", math_a_real_result)
+					
+					input_data_b = neg_right[i] + op + pos_left[i]
+					math_b.append(self.gui_entry_parameters(input_data_b, tests, "BIN", int_size, frac_size))
+					
+					if (op == '+'):
+						math_b_real_result = binary_to_real(binary_string_to_int_list(neg_right[i])) + binary_to_real(binary_string_to_int_list(pos_left[i]))
+					elif (op == '-'):
+						math_b_real_result = binary_to_real(binary_string_to_int_list(neg_right[i])) - binary_to_real(binary_string_to_int_list(pos_left[i]))
+					elif (op == '*'):
+						math_b_real_result = binary_to_real(binary_string_to_int_list(neg_right[i])) * binary_to_real(binary_string_to_int_list(pos_left[i]))
+					elif (op == '/'):
+						math_b_real_result = binary_to_real(binary_string_to_int_list(neg_right[i])) / binary_to_real(binary_string_to_int_list(pos_left[i]))
+					
+					if (math_b_real_result != math_b[i]):
+						print("Mismatch: output B = ", math_b[i], "actual = ", math_b_real_result)
 		
 if __name__ == '__main__':
     unittest.main()				

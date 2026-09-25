@@ -6,7 +6,7 @@ import math
 import numpy as np
 from dataclasses import dataclass
 from typing import List, Literal
-from binary_support import twos_complement, append_msbs, binary_comparator, binary_point_removal
+from binary_support import twos_complement, append_msbs, binary_comparator, binary_point_removal, list_to_string
 
 def binary_division(numerator, denominator, max_size):
 #	print("numerator = ", "".join(map(str, numerator)), "denominator = ", "".join(map(str, denominator)))
@@ -195,6 +195,8 @@ def binary_multiplier(operand_a, operand_b):
 def binary_adder(n, addend):
 	n_sum = []
 	carry = 0
+
+#	print("operand a = ", list_to_string(n), "operand b = ", list_to_string(addend))
 
 	for i in range(len(n)-1, -1, -1):
 		n_sum.append((addend[i] ^ n[i]) ^ carry)

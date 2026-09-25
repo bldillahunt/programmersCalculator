@@ -6,7 +6,7 @@ import math
 import numpy as np
 from dataclasses import dataclass
 from typing import List, Literal
-from binary_support import precision_profile, lookup_table, twos_complement, binary_string_to_int_list, int_list_to_binary_string, binary_point_removal, twos_complement_bin_rational
+from binary_support import precision_profile, lookup_table, twos_complement, binary_string_to_int_list, int_list_to_binary_string, binary_point_removal, twos_complement_bin_rational, list_to_string, remove_msbs
 from binary_conversions import real_to_twos_comp_binary, hexadecimal_to_binary, ieee754_hex_to_binary, binary_to_real, binary_to_hexadecimal, binary_to_ieee754
 from binary_math import binary_division, binary_multiplier, binary_adder, binary_subtraction
 
@@ -147,6 +147,8 @@ class FpgaCalculator:
 			operand_error = False
 			bin_math_error = False
 			self.nibble_size = self.int_bits.get()//4
+			
+#			print(operand1, operand2)
 			
 			# Error checking
 			if (self.input_mode.get() == "REAL"):
@@ -444,7 +446,14 @@ class FpgaCalculator:
 		elif (operator == "*"):
 			math_result = binary_multiplier(operand1, operand2)
 		elif (operator == "+"):
-			addend_a, addend_b, a_radix_index, b_radix_index, fraction_size = binary_point_removal(operand1, operand2)
+#			print("Operand 1 = ", list_to_string(operand1), "Operand 2 = ", list_to_string(operand2))
+			
+			operand1_stripped = remove_msbs(operand1)
+			operand2_stripped = remove_msbs(operand2)
+#			print(list_to_string(operand1_stripped), list_to_string(operand2_stripped))
+			addend_a, addend_b, a_radix_index, b_radix_index, fraction_size = binary_point_removal(operand1_stripped, operand2_stripped)
+
+#			print("Addend a = ", list_to_string(addend_a), "Addend b = ", list_to_string(addend_b))
 			
 			if (a_radix_index > b_radix_index):
 				integer_size = a_radix_index
@@ -456,7 +465,10 @@ class FpgaCalculator:
 			if (n_carry == 1):
 				sum_result = [n_carry] + n_sum
 			else:
-				sum_result = n_sum
+				if (n_sum[0] == 0):
+					sum_result = n_sum
+				else:
+					sum_result = n_sum[1:]
 			
 			binary_point_index = len(sum_result) - fraction_size
 			math_result = sum_result[:binary_point_index] + ['.'] + sum_result[binary_point_index:]

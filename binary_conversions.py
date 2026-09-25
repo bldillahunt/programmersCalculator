@@ -36,7 +36,7 @@ def hexadecimal_to_binary(n, integer_size, fraction_size, lookup_table):
 		integer_string = single_binary_string[:integer_size]
 		fraction_string = single_binary_string[integer_size:]
 		
-		print(binary_string, single_binary_string, integer_string, fraction_string)
+#		print(binary_string, single_binary_string, integer_string, fraction_string)
 		
 		return integer_string + '.' + fraction_string
 
@@ -112,6 +112,8 @@ def binary_to_real(n):
 	n_size = len(n)
 	
 	n_int_list = n
+	
+	print("n_int_list = ", n_int_list)
 	
 	if ('.' in n):
 		binary_point_index = n.index('.')

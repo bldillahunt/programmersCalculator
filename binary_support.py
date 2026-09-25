@@ -254,12 +254,24 @@ def binary_point_removal(operand_a, operand_b):
 			b_no_radix_point = operand_b[b_radix_index+1:]
 		else:
 			return "ERROR"
-				
+
+	if (1 in a_no_radix_point):
+		a_msb = a_no_radix_point.index(1)
+		a_integer_size -= a_msb
+	else:
+		a_msb = 0
+	
+	if (1 in b_no_radix_point):
+		b_msb = b_no_radix_point.index(1)
+		b_integer_size -= b_msb
+	else:
+		b_msb = 0
+	
 	if (a_integer_size > b_integer_size):
 		operand_a_padded = a_no_radix_point
-		operand_b_padded = [b_no_radix_point[0]]*(a_integer_size-b_integer_size) + b_no_radix_point
+		operand_b_padded = [0]*a_msb + [b_no_radix_point[0]]*(a_integer_size-b_integer_size) + b_no_radix_point
 	elif (b_integer_size > a_integer_size):
-		operand_a_padded = [a_no_radix_point[0]]*(b_integer_size-a_integer_size) + a_no_radix_point
+		operand_a_padded = [0]*b_msb + [a_no_radix_point[0]]*(b_integer_size-a_integer_size) + a_no_radix_point
 		operand_b_padded = b_no_radix_point
 	else:
 		operand_a_padded = a_no_radix_point
@@ -412,7 +424,10 @@ def remove_msbs(n):
 		binary_point_index = len(n)
 	
 	if (msb_index < binary_point_index):
-		binary_value = [0] + n[msb_index:]
+		if (n[0] == 0):
+			binary_value = [0] + n[msb_index:]
+		else:
+			binary_value = n[msb_index:]
 	else:
 		binary_value = n[binary_point_index-1:]
 	
