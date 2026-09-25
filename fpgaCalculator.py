@@ -148,7 +148,7 @@ class FpgaCalculator:
 			bin_math_error = False
 			self.nibble_size = self.int_bits.get()//4
 			
-#			print(operand1, operand2)
+			print("Inputs = ", operand1, operand2, operator)
 			
 			# Error checking
 			if (self.input_mode.get() == "REAL"):

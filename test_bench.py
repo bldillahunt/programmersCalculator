@@ -372,31 +372,35 @@ class TestBench(unittest.TestCase):
 					print(pos_right[i])
 					
 					if (op == '+'):
-						math_a_real_result = binary_to_real(binary_string_to_int_list(pos_right[i])) + binary_to_real(binary_string_to_int_list(neg_left[i]))
+						math_a_real_result = binary_to_real(single_positive_right_vectors[i]) + binary_to_real(single_negative_left_vectors[i])
 					elif (op == '-'):
-						math_a_real_result = binary_to_real(binary_string_to_int_list(pos_right[i])) - binary_to_real(binary_string_to_int_list(neg_left[i]))
+						math_a_real_result = binary_to_real(single_positive_right_vectors[i]) - binary_to_real(single_negative_left_vectors[i])
 					elif (op == '*'):
-						math_a_real_result = binary_to_real(binary_string_to_int_list(pos_right[i])) * binary_to_real(binary_string_to_int_list(neg_left[i]))
+						math_a_real_result = binary_to_real(single_positive_right_vectors[i]) * binary_to_real(single_negative_left_vectors[i])
 					elif (op == '/'):
-						math_a_real_result = binary_to_real(binary_string_to_int_list(pos_right[i])) / binary_to_real(binary_string_to_int_list(neg_left[i]))
+						math_a_real_result = binary_to_real(single_positive_right_vectors[i]) / binary_to_real(single_negative_left_vectors[i])
 					
-					if (math_a_real_result != math_a[i]):
-						print("Mismatch: output A = ", math_a[i], "actual = ", math_a_real_result)
+					math_a_real = binary_to_real(binary_string_to_int_list(math_a[i]))
+					
+					if (math_a_real_result != math_a_real):
+						print("Mismatch: output A = ", math_a_real, "actual = ", math_a_real_result)
 					
 					input_data_b = neg_right[i] + op + pos_left[i]
 					math_b.append(self.gui_entry_parameters(input_data_b, tests, "BIN", int_size, frac_size))
 					
 					if (op == '+'):
-						math_b_real_result = binary_to_real(binary_string_to_int_list(neg_right[i])) + binary_to_real(binary_string_to_int_list(pos_left[i]))
+						math_b_real_result = binary_to_real(single_negative_right_vectors[i]) + binary_to_real(single_positive_left_vectors[i])
 					elif (op == '-'):
-						math_b_real_result = binary_to_real(binary_string_to_int_list(neg_right[i])) - binary_to_real(binary_string_to_int_list(pos_left[i]))
+						math_b_real_result = binary_to_real(single_negative_right_vectors[i]) - binary_to_real(single_positive_left_vectors[i])
 					elif (op == '*'):
-						math_b_real_result = binary_to_real(binary_string_to_int_list(neg_right[i])) * binary_to_real(binary_string_to_int_list(pos_left[i]))
+						math_b_real_result = binary_to_real(single_negative_right_vectors[i]) * binary_to_real(single_positive_left_vectors[i])
 					elif (op == '/'):
-						math_b_real_result = binary_to_real(binary_string_to_int_list(neg_right[i])) / binary_to_real(binary_string_to_int_list(pos_left[i]))
+						math_b_real_result = binary_to_real(single_negative_right_vectors[i]) / binary_to_real(single_positive_left_vectors[i])
 					
-					if (math_b_real_result != math_b[i]):
-						print("Mismatch: output B = ", math_b[i], "actual = ", math_b_real_result)
+					math_b_real = binary_to_real(binary_string_to_int_list(math_b[i]))
+					
+					if (math_b_real_result != math_b_real):
+						print("Mismatch: output B = ", math_b_real, "actual = ", math_b_real_result)
 		
 if __name__ == '__main__':
     unittest.main()				
