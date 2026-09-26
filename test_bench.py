@@ -164,7 +164,7 @@ class TestBench(unittest.TestCase):
 				item.append(self.gui_entry_parameters("".join(map(str, single_negative_left_vectors[i])), "BIN", test, int_size, frac_size))
 				binary_input_file.write(str(item[i]) + "\n")				
 
-		print("Created test vectors")
+#		print("Created test vectors")
 		
 		# STEP 2: Run the test vectors back through the calculator
 		binary_output_file = open("binary_output_file.txt", "w")
@@ -245,7 +245,7 @@ class TestBench(unittest.TestCase):
 		binary_input_file.close()
 		binary_output_file.close()
 		
-		print("Generated binary outputs")
+#		print("Generated binary outputs")
 		
 		# Step 3: Compare input lists to output lists
 		# Put binary inputs and binary outputs together in the same file
@@ -368,8 +368,8 @@ class TestBench(unittest.TestCase):
 					input_data_a = pos_right[i] + op + neg_left[i]
 					math_a.append(self.gui_entry_parameters(input_data_a, tests, "BIN", int_size, frac_size))
 					
-					print(len(pos_right), len(neg_right), len(pos_left), len(neg_left))
-					print(pos_right[i])
+#					print(len(pos_right), len(neg_right), len(pos_left), len(neg_left))
+#					print(pos_right[i])
 					
 					if (op == '+'):
 						math_a_real_result = binary_to_real(single_positive_right_vectors[i]) + binary_to_real(single_negative_left_vectors[i])
@@ -383,7 +383,9 @@ class TestBench(unittest.TestCase):
 					math_a_real = binary_to_real(binary_string_to_int_list(math_a[i]))
 					
 					if (math_a_real_result != math_a_real):
-						print("Mismatch: output A = ", math_a_real, "actual = ", math_a_real_result)
+						print("Mismatch: output A = ", math_a_real, "actual = ", math_a_real_result, list_to_string(single_positive_right_vectors[i]), list_to_string(single_negative_left_vectors[i]), op, tests)
+						print(input_data_a)
+#						input("Press enter to continue")
 					
 					input_data_b = neg_right[i] + op + pos_left[i]
 					math_b.append(self.gui_entry_parameters(input_data_b, tests, "BIN", int_size, frac_size))
@@ -400,7 +402,9 @@ class TestBench(unittest.TestCase):
 					math_b_real = binary_to_real(binary_string_to_int_list(math_b[i]))
 					
 					if (math_b_real_result != math_b_real):
-						print("Mismatch: output B = ", math_b_real, "actual = ", math_b_real_result)
+						print("Mismatch: output B = ", math_b_real, "actual = ", math_b_real_result, list_to_string(single_negative_right_vectors[i]), list_to_string(single_positive_left_vectors[i]), op, tests)
+						print(input_data_b)
+#						input("Press enter to continue")
 		
 if __name__ == '__main__':
     unittest.main()				

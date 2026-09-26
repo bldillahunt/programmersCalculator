@@ -113,7 +113,7 @@ def binary_to_real(n):
 	
 	n_int_list = n
 	
-	print("n_int_list = ", n_int_list)
+#	print("n_int_list = ", n_int_list)
 	
 	if ('.' in n):
 		binary_point_index = n.index('.')

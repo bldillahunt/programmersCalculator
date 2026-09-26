@@ -175,6 +175,8 @@ def real_to_binary(n, default_int_size, default_frac_size):
 			binary_bit = integer_quotient % 2
 			binary_int_value.append(str(binary_bit))
 			integer_quotient = integer_quotient//2
+	else:
+		binary_int_value.append('0')
 	
 	binary_int_value.reverse()
 	
@@ -220,7 +222,7 @@ def binary_point_removal(operand_a, operand_b):
 			b_integer_size = b_radix_index
 			b_fraction_size = b_size - (b_radix_index + 1)
 	else:
-		if (operand_a[0] != '.'):
+		if (operand_b[0] != '.'):
 			b_integer_size = b_size
 			b_fraction_size = 0
 		else:
@@ -257,15 +259,21 @@ def binary_point_removal(operand_a, operand_b):
 
 	if (1 in a_no_radix_point):
 		a_msb = a_no_radix_point.index(1)
-		a_integer_size -= a_msb
+		
+		if (a_msb < a_radix_index):
+			a_integer_size -= a_msb
 	else:
 		a_msb = 0
 	
 	if (1 in b_no_radix_point):
 		b_msb = b_no_radix_point.index(1)
-		b_integer_size -= b_msb
+		
+		if (b_msb < b_radix_index):
+			b_integer_size -= b_msb
 	else:
 		b_msb = 0
+	
+#	print("a integer size = ", a_integer_size, "b integer size", b_integer_size)
 	
 	if (a_integer_size > b_integer_size):
 		operand_a_padded = a_no_radix_point
@@ -296,7 +304,20 @@ def binary_point_removal(operand_a, operand_b):
 		operand_b_out = operand_b_padded
 		fraction_size = a_fraction_size
 	
-	return operand_a_out, operand_b_out, a_radix_index, b_radix_index, fraction_size
+	a_size_out = len(operand_a_out)
+	b_size_out = len(operand_b_out)
+	
+	if (a_size_out > b_size_out):
+		result_a = operand_a_out;
+		result_b = [0]*(a_size_out - b_size_out) + operand_b_out
+	elif (b_size_out > a_size_out):
+		result_a = [0]*(b_size_out - a_size_out) + operand_a_out
+		result_b = operand_b_out
+	else:
+		result_a = operand_a_out;
+		result_b = operand_b_out
+		
+	return result_a, result_b, a_radix_index, b_radix_index, fraction_size
 
 def twos_complement(n_int_list):
 	n_int_list_inverted = []
@@ -432,3 +453,101 @@ def remove_msbs(n):
 		binary_value = n[binary_point_index-1:]
 	
 	return binary_value
+
+def binary_point_alignment(operand_a, operand_b, enable_twos_complement):
+	if ('.' in operand_a):
+		a_has_binary_point = True
+	else:
+		a_has_binary_point = False
+	
+	if ('.' in operand_b):
+		b_has_binary_point = True
+	else:
+		b_has_binary_point = False
+
+	if (a_has_binary_point == True):
+		a_radix_index = operand_a.index('.')
+	else:
+		a_radix_index = len(operand_a)
+
+	operand_a_normalized = []
+
+	if (a_has_binary_point == True):
+		operand_a_normalized = operand_a
+		operand_a_normalized.pop(a_radix_index)
+	else:
+		operand_a_normalized = operand_a
+	
+	if (b_has_binary_point == True):
+		b_radix_index = operand_b.index('.')
+	else:
+		b_radix_index = len(operand_b)
+	
+	operand_b_normalized = []
+
+	if (b_has_binary_point == True):
+		operand_b_normalized = operand_b
+		operand_b_normalized.pop(b_radix_index)
+	else:
+		operand_b_normalized = operand_b
+		
+	a_size = len(operand_a)
+	b_size = len(operand_b)
+
+	if (a_has_binary_point == True):
+		a_integer_size = a_radix_index
+		a_fraction_size = a_size - a_radix_index
+	else:
+		a_integer_size = a_size
+		a_fraction_size = 0
+	
+	if (b_has_binary_point == True):
+		b_integer_size = b_radix_index
+		b_fraction_size = b_size - b_radix_index
+	else:
+		b_integer_size = b_size
+		b_fraction_size = 0
+
+	if (enable_twos_complement == True):	
+		if (operand_a_normalized[0] == 1):
+			operand_a_2s_comp, carry_a = twos_complement(operand_a_normalized)
+		else:
+			operand_a_2s_comp = operand_a_normalized
+
+		if (operand_b_normalized[0] == 1):
+			operand_b_2s_comp, carry_b = twos_complement(operand_b_normalized)
+		else:
+			operand_b_2s_comp = operand_b_normalized
+	else:
+		operand_a_2s_comp = operand_a_normalized
+		operand_b_2s_comp = operand_b_normalized
+	
+	if (a_integer_size > b_integer_size):
+		operand_a_padded_left = operand_a_2s_comp
+		
+		if (enable_twos_complement == True):	
+			operand_b_padded_left = [0]*(a_integer_size - b_integer_size) + operand_b_2s_comp
+		else:
+			operand_b_padded_left = [operand_b_2s_comp[0]]*(a_integer_size - b_integer_size) + operand_b_2s_comp
+	elif (b_integer_size > a_integer_size):
+		if (enable_twos_complement == True):
+			operand_a_padded_left = [0]*(b_integer_size - a_integer_size) + operand_a_2s_comp	
+		else:
+			operand_a_padded_left = [operand_a_2s_comp[0]]*(b_integer_size - a_integer_size) + operand_a_2s_comp	
+			
+		operand_b_padded_left = operand_b_2s_comp
+	else:
+		operand_a_padded_left = operand_a_2s_comp
+		operand_b_padded_left = operand_b_2s_comp
+	
+	if (a_fraction_size > b_fraction_size):
+		operand_a_padded = operand_a_padded_left
+		operand_b_padded = operand_b_padded_left + [0]*(a_fraction_size - b_fraction_size)
+	elif (b_fraction_size > a_fraction_size):
+		operand_a_padded = operand_a_padded_left + [0]*(b_fraction_size - a_fraction_size)
+		operand_b_padded = operand_b_padded_left
+	else:
+		operand_a_padded = operand_a_padded_left
+		operand_b_padded = operand_b_padded_left
+
+	return operand_a_padded, operand_b_padded, a_fraction_size, b_fraction_size

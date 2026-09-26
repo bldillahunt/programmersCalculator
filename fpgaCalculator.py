@@ -6,12 +6,14 @@ import math
 import numpy as np
 from dataclasses import dataclass
 from typing import List, Literal
-from binary_support import precision_profile, lookup_table, twos_complement, binary_string_to_int_list, int_list_to_binary_string, binary_point_removal, twos_complement_bin_rational, list_to_string, remove_msbs
+from binary_support import precision_profile, lookup_table, twos_complement, binary_string_to_int_list, int_list_to_binary_string, binary_point_removal, twos_complement_bin_rational, list_to_string, remove_msbs, binary_point_alignment
 from binary_conversions import real_to_twos_comp_binary, hexadecimal_to_binary, ieee754_hex_to_binary, binary_to_real, binary_to_hexadecimal, binary_to_ieee754
 from binary_math import binary_division, binary_multiplier, binary_adder, binary_subtraction
 
 class FpgaCalculator:
 	def __init__(self, root):
+		self.enable_print_statements = False
+
 		self.root = root
 		self.root.title("FPGA Developer Calculator")
 		self.root.geometry("450x600")
@@ -148,7 +150,7 @@ class FpgaCalculator:
 			bin_math_error = False
 			self.nibble_size = self.int_bits.get()//4
 			
-			print("Inputs = ", operand1, operand2, operator)
+#			print("Inputs = ", operand1, operand2, operator)
 			
 			# Error checking
 			if (self.input_mode.get() == "REAL"):
@@ -380,12 +382,13 @@ class FpgaCalculator:
 			else:
 				max_size = self.int_bits.get() + self.frac_bits.get()
 			
-			if ('.' in operand1) or ('.' in operand2):
-				operand1_no_bin_point, operand2_no_bin_point, op1_radix_index, op2_radix_index, fraction_size = binary_point_removal(operand1, operand2)
-			else:
-				operand1_no_bin_point = operand1
-				operand2_no_bin_point = operand2
-				fraction_size = 0
+#			if ('.' in operand1) or ('.' in operand2):
+#				operand1_no_bin_point, operand2_no_bin_point, op1_radix_index, op2_radix_index, fraction_size = binary_point_removal(operand1, operand2)
+#			else:
+#				operand1_no_bin_point = operand1
+#				operand2_no_bin_point = operand2
+#				fraction_size = 0
+			operand1_no_bin_point, operand2_no_bin_point, operand1_fraction_size, operand2_fraction_size = binary_point_alignment(operand1, operand2, False)
 			
 			if (operand1[0] == 1):
 				operand1_2s_comp, op1_carry = twos_complement(operand1_no_bin_point)
@@ -403,40 +406,53 @@ class FpgaCalculator:
 			
 #			print("Fraction size = ", fraction_size)
 			
-			if ('.' in operand1):
-				operand1_bin_point = operand1_2s_comp[:(len(operand1_2s_comp) - fraction_size)] + ['.'] + operand1_2s_comp[(len(operand1_2s_comp) - fraction_size):]
-			else:
-				if (len(operand1) < len(operand1_2s_comp)):
-					operand1_bin_point = operand1_2s_comp[:len(operand1)] + ['.'] + operand1_2s_comp[len(operand1):]
-				else:
-					operand1_bin_point = operand1_2s_comp + ['.']
-
-			if ('.' in operand2):
-				operand2_bin_point = operand2_2s_comp[:(len(operand2_2s_comp) - fraction_size)] + ['.'] + operand2_2s_comp[(len(operand2_2s_comp) - fraction_size):]
-			else:
-				if (len(operand2) < len(operand2_2s_comp)):
-					operand2_bin_point = operand2_2s_comp[:len(operand2)] + ['.'] + operand2_2s_comp[len(operand2):]
-				else:
-					operand2_bin_point = operand2_2s_comp + ['.']
+			quotient = binary_division(operand1_2s_comp, operand2_2s_comp, max_size)
 			
-			quotient = binary_division(operand1_bin_point, operand2_bin_point, max_size)
-			
-#			print("quotient raw = ", "".join(map(str, quotient)))
+			if (self.enable_print_statements == True):
+				print("No binary points = ", list_to_string(operand1_no_bin_point), list_to_string(operand2_no_bin_point))
+				print("quotient raw = ", "".join(map(str, quotient)))
+				print("Inputs = ", list_to_string(operand1_bin_point), list_to_string(operand2_bin_point))
 			
 			if ((sign_operand1 ^ sign_operand2) == 1):
-				quotient_no_bin_point, null_output, quotient_radix_index, null_radix_index, fraction_size = binary_point_removal(quotient, [''])
+#				quotient_no_bin_point, null_output, quotient_radix_index, null_radix_index, fraction_size = binary_point_removal(quotient, [''])
+				quotient_size = len(quotient)
 				
-				if (self.int_bits.get() > quotient_radix_index):
-					quotient_extended = [0]*(self.int_bits.get() - quotient_radix_index) + quotient_no_bin_point
-					quotient_2s_comp, carry_quotient = twos_complement(quotient_extended)
-					quotient_2s_comp_bin_point = quotient_2s_comp[:self.int_bits.get()] + ['.'] + quotient_2s_comp[self.int_bits.get():]
+				if ('.' in quotient):
+					quotient_radix_index = quotient.index('.')
+					quotient.pop(quotient_radix_index)
 				else:
-					quotient_extended = quotient_no_bin_point
-					quotient_2s_comp, carry_quotient = twos_complement(quotient_extended)
-					quotient_2s_comp_bin_point = quotient_2s_comp[:quotient_radix_index] + ['.'] + quotient_2s_comp[quotient_radix_index:]
+					quotient_radix_index = quotient_size
+
+				if (quotient_radix_index < quotient_size):
+					quotient_fraction_size = quotient_size - (quotient_radix_index + 1)
+				else:
+					quotient_fraction_size = 0
+					
+				quotient_no_bin_point = quotient
+				quotient_2s_comp, carry_quotient = twos_complement(quotient_no_bin_point)
 				
+#				if (sign_operand1 == 1):
+#					quotient_2s_comp_bin_point = quotient_2s_comp[:quotient_size - quotient_fraction_size + 1] + ['.'] + quotient_2s_comp[quotient_size - quotient_fraction_size + 1:]
+#				elif (sign_operand2 == 1):
+#					quotient_2s_comp_bin_point = quotient_2s_comp[:quotient_size - quotient_fraction_size - 2] + ['.'] + quotient_2s_comp[quotient_size - quotient_fraction_size - 2:]
+#				else:
+				quotient_2s_comp_bin_point = quotient_2s_comp[:quotient_size - quotient_fraction_size - 1] + ['.'] + quotient_2s_comp[quotient_size - quotient_fraction_size - 1:]
+				
+				if False:
+					if (self.int_bits.get() > quotient_radix_index):
+						quotient_extended = [0]*(self.int_bits.get() - quotient_radix_index) + quotient_no_bin_point
+						quotient_2s_comp, carry_quotient = twos_complement(quotient_extended)
+						quotient_2s_comp_bin_point = quotient_2s_comp[:self.int_bits.get()] + ['.'] + quotient_2s_comp[self.int_bits.get():]
+					else:
+						quotient_extended = quotient_no_bin_point
+						quotient_2s_comp, carry_quotient = twos_complement(quotient_extended)
+						quotient_2s_comp_bin_point = quotient_2s_comp[:quotient_radix_index] + ['.'] + quotient_2s_comp[quotient_radix_index:]
 				
 #				print("quotient 2s comp = ", "".join(map(str, quotient_2s_comp_bin_point)))
+
+				if (self.enable_print_statements == True):
+					print(quotient_radix_index, list_to_string(quotient), list_to_string(quotient_no_bin_point), list_to_string(quotient_2s_comp_bin_point))
+					
 				math_result_2s_comp = quotient_2s_comp_bin_point
 			else:
 				math_result_2s_comp = quotient
@@ -446,31 +462,23 @@ class FpgaCalculator:
 		elif (operator == "*"):
 			math_result = binary_multiplier(operand1, operand2)
 		elif (operator == "+"):
-#			print("Operand 1 = ", list_to_string(operand1), "Operand 2 = ", list_to_string(operand2))
-			
-			operand1_stripped = remove_msbs(operand1)
-			operand2_stripped = remove_msbs(operand2)
-#			print(list_to_string(operand1_stripped), list_to_string(operand2_stripped))
-			addend_a, addend_b, a_radix_index, b_radix_index, fraction_size = binary_point_removal(operand1_stripped, operand2_stripped)
-
-#			print("Addend a = ", list_to_string(addend_a), "Addend b = ", list_to_string(addend_b))
-			
-			if (a_radix_index > b_radix_index):
-				integer_size = a_radix_index
-			elif (b_radix_index >= a_radix_index):
-				integer_size = b_radix_index
-			
+			addend_a, addend_b, operand1_fraction_size, operand2_fraction_size = binary_point_alignment(operand1, operand2, False)
+				
+			if (operand1_fraction_size > operand2_fraction_size):
+				fraction_size = operand1_fraction_size
+			else:
+				fraction_size = operand2_fraction_size
+				
 			n_sum, n_carry = binary_adder(addend_a, addend_b)
 			
-			if (n_carry == 1):
-				sum_result = [n_carry] + n_sum
-			else:
-				if (n_sum[0] == 0):
-					sum_result = n_sum
-				else:
-					sum_result = n_sum[1:]
+			sum_result = n_sum
 			
 			binary_point_index = len(sum_result) - fraction_size
+			
+			if (self.enable_print_statements == True):
+				print(list_to_string(addend_a), list_to_string(addend_b), operand1_fraction_size, operand2_fraction_size)
+				print(list_to_string(n_sum), n_carry, list_to_string(sum_result), binary_point_index)
+				
 			math_result = sum_result[:binary_point_index] + ['.'] + sum_result[binary_point_index:]
 		elif (operator == "-"):
 			math_result = binary_subtraction(operand1, operand2)
