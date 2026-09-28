@@ -458,6 +458,7 @@ class FpgaCalculator:
 				math_result_2s_comp = quotient
 			
 #			print("quotient = ", "".join(map(str, math_result_2s_comp)))
+
 			math_result = math_result_2s_comp
 		elif (operator == "*"):
 			math_result = binary_multiplier(operand1, operand2)
@@ -471,7 +472,10 @@ class FpgaCalculator:
 				
 			n_sum, n_carry = binary_adder(addend_a, addend_b)
 			
-			sum_result = n_sum
+			if ((operand1[0] == 0) and (operand2[0] == 0) and (n_sum[0] == 1)) or ((operand1[0] == 1) and (operand2[0] == 1) and (n_sum[0] == 0)):
+				sum_result = [n_carry] + n_sum
+			else:
+				sum_result = n_sum
 			
 			binary_point_index = len(sum_result) - fraction_size
 			

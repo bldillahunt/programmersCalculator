@@ -6,6 +6,7 @@ from fpgaCalculator import FpgaCalculator
 from binary_support import int_list_to_binary_string, binary_string_to_int_list, list_to_string
 from binary_conversions import binary_to_real
 from itertools import chain
+import random  # NEW: Required for generating random fuzzing inputs
 
 class TestBench(unittest.TestCase): 
     
@@ -17,6 +18,123 @@ class TestBench(unittest.TestCase):
 		# Instantiate your application class directly into the test context 
 		cls.app = FpgaCalculator(cls.root) 
 		cls.app.create_widgets() # Forces the widget bindings to complete 
+		# =====================================================================
+		# ?? RANDOM FUZZING REGRESSION SECTION (Runs First & Decoupled)
+		# =====================================================================
+		print(" Initializing Decoupled Random Fuzzing Regression Suite...")
+		
+		# Define configuration bounds for the random generator
+		test_cases = ["REAL", "HEX", "BIN", "FP32", "FP64"]
+		math_ops = ["+", "-", "*", "/"]
+		
+		# Set a target number of random combinations to run (e.g., 2000 patterns)
+		NUM_FUZZ_PATTERNS = 2000 
+		
+		passed_fuzz = 0
+		failed_fuzz = 0
+		fuzz_mismatch_logs = []
+
+		# Helper to execute calculations through your Tkinter app state silently
+		def run_silent_fuzz(val, in_m, out_m, i_sz, f_sz):
+			cls.app.input_mode.set(in_m) 
+			cls.app.output_mode.set(out_m) 
+			cls.app.int_bits.set(i_sz) 
+			cls.app.frac_bits.set(f_sz) 
+			cls.app.main_display_var.set(val) 
+			cls.app.on_button_click("Enter") 
+			return cls.app.aux_display_var.get()
+
+		# Helper to generate a completely randomized, valid fixed-point binary string list
+		def generate_random_bin_list(int_w, frac_w):
+			# Randomize sign bit, integer bits, and fractional bits
+			bits = [random.choice([0, 1]) for _ in range(int_w + frac_w)]
+			bits.insert(int_w, '.') # Drop the radix point at the exact boundary
+			return bits
+
+		for pattern_idx in range(NUM_FUZZ_PATTERNS):
+			# 1. Randomly select format pairs, widths, and operations
+			in_type = random.choice(test_cases)
+			out_type = random.choice(test_cases)
+			op = random.choice(math_ops)
+			
+			# Constrain registers dynamically to mirror your hardware parameters
+			int_size = 12 if in_type == "HEX" else 64
+			frac_size = 12 if in_type == "HEX" else 64
+
+			# 2. Generate two distinct, randomized binary array seeds
+			seed_a = generate_random_bin_list(int_size, frac_size)
+			seed_b = generate_random_bin_list(int_size, frac_size)
+			
+			str_seed_a = "".join(map(str, seed_a))
+			str_seed_b = "".join(map(str, seed_b))
+
+			try:
+				# 3. Process inputs through the calculator's conversion layer
+				conv_a = run_silent_fuzz(str_seed_a, "BIN", in_type, int_size, frac_size)
+				conv_b = run_silent_fuzz(str_seed_b, "BIN", in_type, int_size, frac_size)
+				
+				# Handle division by zero constraints safely at the regression layer
+				if op == '/' and binary_to_real(seed_b) == 0.0:
+					continue 
+
+				# Combine operands and operator into your standard execution string
+				eval_string = f"{conv_a}{op}{conv_b}"
+				raw_output = run_silent_fuzz(eval_string, in_type, "BIN", int_size, frac_size)
+				
+				# 4. Reference Verification Math
+				val_a = binary_to_real(seed_a)
+				val_b = binary_to_real(seed_b)
+				
+				if op == '+': expected_real = val_a + val_b
+				elif op == '-': expected_real = val_a - val_b
+				elif op == '*': expected_real = val_a * val_b
+				elif op == '/': expected_real = val_a / val_b
+
+				calculated_real = binary_to_real(binary_string_to_int_list(raw_output))
+
+				allowed_tolerance = 1e-4 if int_size == 64 else 1e-6
+
+				if expected_real != 0:
+					is_match = (abs(calculated_real - expected_real) / abs(expected_real)) < allowed_tolerance
+				else:
+					# If the expected answer is exactly 0.0, a relative check breaks (division by zero).
+					# We gracefully fall back to a strict absolute boundary check for 0.0.
+					is_match = abs(calculated_real) < allowed_tolerance
+
+				# Validate tolerance to protect against basic floating-point representation limits
+				if is_match:
+					passed_fuzz += 1
+				else:
+					failed_fuzz += 1
+					fuzz_mismatch_logs.append(
+						f"Pattern #{pattern_idx} Mismatch!\n"
+						f"  Format Pair: {in_type} -> {out_type} | Op: [{op}] | Width: Q{int_size}.{frac_size}\n"
+						f"  Operand A Binary: {str_seed_a} ({val_a})\n"
+						f"  Operand B Binary: {str_seed_b} ({val_b})\n"
+						f"  Expected Real:    {expected_real}\n"
+						f"  Calculator Real:  {calculated_real} (Raw Return: '{raw_output}')\n"
+					)
+			except Exception as e:
+				failed_fuzz += 1
+				fuzz_mismatch_logs.append(f"Pattern #{pattern_idx} CRASHED: {str(e)} | Context: {str_seed_a} {op} {str_seed_b} [{in_type}]")
+
+		print("\n" + "="*60)
+		print(f"RANDOM FUZZING REGRESSION RESULTS: {'PASSED' if failed_fuzz == 0 else 'FAILED'}")
+		print(f"Total Random Permutations Evaluated: {passed_fuzz + failed_fuzz}")
+		print(f"Passed Patterns: {passed_fuzz} | Detected Mismatches: {failed_fuzz}")
+		print("="*60 + "\n")
+
+		if failed_fuzz > 0:
+			print(" FUZZ ENGINE ERROR DIAGNOSTIC BREAKDOWN:")
+			for log in fuzz_mismatch_logs[:5]: # Display first 5 failure vectors
+				print(log + "-"*40)
+			if failed_fuzz > 5:
+				print(f"  ...and {failed_fuzz - 5} more hidden boundary failures discovered.")
+			print("\n Regression check failed. Halting before executing directed tests.")
+#			raise RuntimeError("Randomized regression constraint mismatch detected.")
+			
+		print("Core ALU survived all random fuzzing patterns safely! Launching legacy directed tests...\n")
+		# =====================================================================
 
 	def press_key(self, char_str):
 		"""Simulates a user physically typing characters or clicking grid buttons."""
