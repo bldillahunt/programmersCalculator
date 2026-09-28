@@ -97,7 +97,7 @@ def int_list_to_binary_string(n, size):
 	return binary_list
 
 # The core of the real-to-binary conversion
-def real_to_binary(n, default_int_size, default_frac_size):
+def real_to_binary(n, default_frac_size):
 	if '.' in n:
 		decimal_point_index = n.find('.')
 

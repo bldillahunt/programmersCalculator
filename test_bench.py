@@ -7,6 +7,8 @@ from binary_support import int_list_to_binary_string, binary_string_to_int_list,
 from binary_conversions import binary_to_real
 from itertools import chain
 import random  # NEW: Required for generating random fuzzing inputs
+import decimal
+from decimal import Decimal
 
 class TestBench(unittest.TestCase): 
     
@@ -22,6 +24,9 @@ class TestBench(unittest.TestCase):
 		# ?? RANDOM FUZZING REGRESSION SECTION (Runs First & Decoupled)
 		# =====================================================================
 		print(" Initializing Decoupled Random Fuzzing Regression Suite...")
+
+		# Ensure the precision is high enough to hold your 35+ digit calculations
+		decimal.getcontext().prec = 60
 		
 		# Define configuration bounds for the random generator
 		test_cases = ["REAL", "HEX", "BIN", "FP32", "FP64"]
@@ -58,8 +63,8 @@ class TestBench(unittest.TestCase):
 			op = random.choice(math_ops)
 			
 			# Constrain registers dynamically to mirror your hardware parameters
-			int_size = 12 if in_type == "HEX" else 64
-			frac_size = 12 if in_type == "HEX" else 64
+			int_size = 12 if in_type == "HEX" else 32
+			frac_size = 12 if in_type == "HEX" else 32
 
 			# 2. Generate two distinct, randomized binary array seeds
 			seed_a = generate_random_bin_list(int_size, frac_size)
@@ -74,7 +79,7 @@ class TestBench(unittest.TestCase):
 				conv_b = run_silent_fuzz(str_seed_b, "BIN", in_type, int_size, frac_size)
 				
 				# Handle division by zero constraints safely at the regression layer
-				if op == '/' and binary_to_real(seed_b) == 0.0:
+				if op == '/' and Decimal(binary_to_real(seed_b)) == 0.0:
 					continue 
 
 				# Combine operands and operator into your standard execution string
@@ -82,15 +87,15 @@ class TestBench(unittest.TestCase):
 				raw_output = run_silent_fuzz(eval_string, in_type, "BIN", int_size, frac_size)
 				
 				# 4. Reference Verification Math
-				val_a = binary_to_real(seed_a)
-				val_b = binary_to_real(seed_b)
+				val_a = Decimal(binary_to_real(seed_a))
+				val_b = Decimal(binary_to_real(seed_b))
 				
 				if op == '+': expected_real = val_a + val_b
 				elif op == '-': expected_real = val_a - val_b
 				elif op == '*': expected_real = val_a * val_b
 				elif op == '/': expected_real = val_a / val_b
 
-				calculated_real = binary_to_real(binary_string_to_int_list(raw_output))
+				calculated_real = Decimal(binary_to_real(binary_string_to_int_list(raw_output)))
 
 				allowed_tolerance = 1e-4 if int_size == 64 else 1e-6
 
@@ -371,19 +376,19 @@ class TestBench(unittest.TestCase):
 		
 		for tests, output_list in zip(test_cases, bin_out_arrays_pos_right):
 			for i in range(0, len(single_positive_right_vectors)):
-				comparison_file.write(str(binary_to_real(single_positive_right_vectors[i])) + " " + str(binary_to_real(binary_string_to_int_list(output_list[i]))) + " " + list_to_string(single_positive_right_vectors[i]) + " " + output_list[i] + "\n")
+				comparison_file.write(binary_to_real(single_positive_right_vectors[i]) + " " + binary_to_real(binary_string_to_int_list(output_list[i])) + " " + list_to_string(single_positive_right_vectors[i]) + " " + output_list[i] + "\n")
 		
 		for tests, output_list in zip(test_cases, bin_out_arrays_neg_right):
 			for i in range(0, len(single_negative_right_vectors)):
-				comparison_file.write(str(binary_to_real(single_negative_right_vectors[i])) + " " + str(binary_to_real(binary_string_to_int_list(output_list[i]))) + " " + list_to_string(single_negative_right_vectors[i]) + " " + output_list[i] + "\n")
+				comparison_file.write(binary_to_real(single_negative_right_vectors[i]) + " " + binary_to_real(binary_string_to_int_list(output_list[i])) + " " + list_to_string(single_negative_right_vectors[i]) + " " + output_list[i] + "\n")
 		
 		for tests, output_list in zip(test_cases, bin_out_arrays_pos_left):
 			for i in range(0, len(single_positive_left_vectors)):
-				comparison_file.write(str(binary_to_real(single_positive_left_vectors[i])) + " " + str(binary_to_real(binary_string_to_int_list(output_list[i]))) + " " + list_to_string(single_positive_left_vectors[i]) + " " + output_list[i] + "\n")
+				comparison_file.write(binary_to_real(single_positive_left_vectors[i]) + " " + binary_to_real(binary_string_to_int_list(output_list[i])) + " " + list_to_string(single_positive_left_vectors[i]) + " " + output_list[i] + "\n")
 		
 		for tests, output_list in zip(test_cases, bin_out_arrays_neg_left):
 			for i in range(0, len(single_negative_left_vectors)):
-				comparison_file.write(str(binary_to_real(single_negative_left_vectors[i])) + " " + str(binary_to_real(binary_string_to_int_list(output_list[i]))) + " " + list_to_string(single_negative_left_vectors[i]) + " " + output_list[i] + "\n")
+				comparison_file.write(binary_to_real(single_negative_left_vectors[i]) + " " + binary_to_real(binary_string_to_int_list(output_list[i])) + " " + list_to_string(single_negative_left_vectors[i]) + " " + output_list[i] + "\n")
 		
 		comparison_file.close()
 		
@@ -490,15 +495,15 @@ class TestBench(unittest.TestCase):
 #					print(pos_right[i])
 					
 					if (op == '+'):
-						math_a_real_result = binary_to_real(single_positive_right_vectors[i]) + binary_to_real(single_negative_left_vectors[i])
+						math_a_real_result = Decimal(binary_to_real(single_positive_right_vectors[i])) + Decimal(binary_to_real(single_negative_left_vectors[i]))
 					elif (op == '-'):
-						math_a_real_result = binary_to_real(single_positive_right_vectors[i]) - binary_to_real(single_negative_left_vectors[i])
+						math_a_real_result = Decimal(binary_to_real(single_positive_right_vectors[i])) - Decimal(binary_to_real(single_negative_left_vectors[i]))
 					elif (op == '*'):
-						math_a_real_result = binary_to_real(single_positive_right_vectors[i]) * binary_to_real(single_negative_left_vectors[i])
+						math_a_real_result = Decimal(binary_to_real(single_positive_right_vectors[i])) * Decimal(binary_to_real(single_negative_left_vectors[i]))
 					elif (op == '/'):
-						math_a_real_result = binary_to_real(single_positive_right_vectors[i]) / binary_to_real(single_negative_left_vectors[i])
+						math_a_real_result = Decimal(binary_to_real(single_positive_right_vectors[i])) / Decimal(binary_to_real(single_negative_left_vectors[i]))
 					
-					math_a_real = binary_to_real(binary_string_to_int_list(math_a[i]))
+					math_a_real = Decimal(binary_to_real(binary_string_to_int_list(math_a[i])))
 					
 					if (math_a_real_result != math_a_real):
 						print("Mismatch: output A = ", math_a_real, "actual = ", math_a_real_result, list_to_string(single_positive_right_vectors[i]), list_to_string(single_negative_left_vectors[i]), op, tests)
@@ -509,15 +514,15 @@ class TestBench(unittest.TestCase):
 					math_b.append(self.gui_entry_parameters(input_data_b, tests, "BIN", int_size, frac_size))
 					
 					if (op == '+'):
-						math_b_real_result = binary_to_real(single_negative_right_vectors[i]) + binary_to_real(single_positive_left_vectors[i])
+						math_b_real_result = Decimal(binary_to_real(single_negative_right_vectors[i])) + Decimal(binary_to_real(single_positive_left_vectors[i]))
 					elif (op == '-'):
-						math_b_real_result = binary_to_real(single_negative_right_vectors[i]) - binary_to_real(single_positive_left_vectors[i])
+						math_b_real_result = Decimal(binary_to_real(single_negative_right_vectors[i])) - Decimal(binary_to_real(single_positive_left_vectors[i]))
 					elif (op == '*'):
-						math_b_real_result = binary_to_real(single_negative_right_vectors[i]) * binary_to_real(single_positive_left_vectors[i])
+						math_b_real_result = Decimal(binary_to_real(single_negative_right_vectors[i])) * Decimal(binary_to_real(single_positive_left_vectors[i]))
 					elif (op == '/'):
-						math_b_real_result = binary_to_real(single_negative_right_vectors[i]) / binary_to_real(single_positive_left_vectors[i])
+						math_b_real_result = Decimal(binary_to_real(single_negative_right_vectors[i])) / Decimal(binary_to_real(single_positive_left_vectors[i]))
 					
-					math_b_real = binary_to_real(binary_string_to_int_list(math_b[i]))
+					math_b_real = Decimal(binary_to_real(binary_string_to_int_list(math_b[i])))
 					
 					if (math_b_real_result != math_b_real):
 						print("Mismatch: output B = ", math_b_real, "actual = ", math_b_real_result, list_to_string(single_negative_right_vectors[i]), list_to_string(single_positive_left_vectors[i]), op, tests)
