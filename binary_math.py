@@ -301,4 +301,16 @@ def binary_modulo(A, B, max_size):
 		modulo_2s_comp = modulo
 	
 	return modulo_2s_comp
+
+def binary_twos_complement(A):
+	if ('.' in A):
+		binary_point_index = A.index('.')
+		A.pop(binary_point_index)
+		a_2s_comp, carry = twos_complement(A)		
+		a_2s_comp.insert(binary_point_index, '.')
+	else:
+		a_2s_comp, carry = twos_complement(A)
+
+	return a_2s_comp		
+	
 	

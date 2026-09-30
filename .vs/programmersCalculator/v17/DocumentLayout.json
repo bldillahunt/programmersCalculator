@@ -48,7 +48,7 @@
               "RelativeDocumentMoniker": "fpgaCalculator.py",
               "ToolTip": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\fpgaCalculator.py",
               "RelativeToolTip": "fpgaCalculator.py",
-              "ViewState": "AgIAAHEBAAAAAAAAAAAUwHcBAAA6AAAAAAAAAA==",
+              "ViewState": "AgIAAGAAAAAAAAAAAADwv2cAAABUAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
               "WhenOpened": "2026-09-22T05:23:57.689Z",
               "EditorCaption": ""
@@ -63,8 +63,7 @@
               "RelativeToolTip": "binary_logic.py",
               "ViewState": "AgIAABEAAAAAAAAAAAAcwBsAAAAbAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-09-30T02:40:25.195Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-30T02:40:25.195Z"
             },
             {
               "$type": "Document",
@@ -76,8 +75,7 @@
               "RelativeToolTip": "binary_support.py",
               "ViewState": "AgIAAEMBAAAAAAAAAAAUwEkBAAArAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-09-28T02:15:02.938Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-28T02:15:02.938Z"
             },
             {
               "$type": "Document",
@@ -89,8 +87,7 @@
               "RelativeToolTip": "binary_math.py",
               "ViewState": "AgIAABIBAAAAAAAAAAAUwB8BAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-09-25T04:27:22.935Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-25T04:27:22.935Z"
             },
             {
               "$type": "Document",
@@ -102,8 +99,7 @@
               "RelativeToolTip": "binary_conversions.py",
               "ViewState": "AgIAAOYAAAAAAAAAAADwv+8AAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-09-28T17:30:27.798Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-09-28T17:30:27.798Z"
             }
           ]
         }
