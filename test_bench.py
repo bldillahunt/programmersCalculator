@@ -32,6 +32,14 @@ class TestBench(unittest.TestCase):
 		test_cases = ["REAL", "HEX", "BIN", "FP32", "FP64"]
 		math_ops = ["+", "-", "*", "/"]
 		
+		SIZE_MAP = {
+			"HEX":  (12, 12),
+			"REAL": (32, 32),
+			"BIN":  (32, 32),
+			"FP32": (12, 11),
+			"FP64": (32, 32),
+		}		
+		
 		# Set a target number of random combinations to run (e.g., 2000 patterns)
 		NUM_FUZZ_PATTERNS = 2000 
 		
@@ -63,8 +71,10 @@ class TestBench(unittest.TestCase):
 			op = random.choice(math_ops)
 			
 			# Constrain registers dynamically to mirror your hardware parameters
-			int_size = 12 if in_type == "HEX" else 32
-			frac_size = 12 if in_type == "HEX" else 32
+#			int_size = 12 if in_type == "HEX" else 32
+#			frac_size = 12 if in_type == "HEX" else 32
+
+			int_size, frac_size = SIZE_MAP.get(in_type, (32, 32))
 
 			# 2. Generate two distinct, randomized binary array seeds
 			seed_a = generate_random_bin_list(int_size, frac_size)
@@ -141,6 +151,70 @@ class TestBench(unittest.TestCase):
 		print("Core ALU survived all random fuzzing patterns safely! Launching legacy directed tests...\n")
 		# =====================================================================
 
+		# =====================================================================
+		# ?? MONKEY TYPING INTERFACE FUZZER (Decoupled Chaos Testing)
+		# =====================================================================
+		print("\n" + "="*60)
+		print(" Launching Monkey Typing / Chaos Validation Tester...")
+		print("="*60)
+
+		# Pool of absolute keyboard smash chaos: letters, markdown, special characters, and numbers
+		monkey_chaos_pool = string.printable + "   " if 'string' in globals() else "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+=-[]{}|;':\",./<>?`~ \t\n"
+		
+		NUM_MONKEY_SMASHES = 500
+		monkey_crashes = 0
+		monkey_crash_logs = []
+
+		for monkey_idx in range(NUM_MONKEY_SMASHES):
+			# Generate a random chaotic input string of random length (0 to 80 characters)
+			smash_length = random.randint(0, 80)
+			chaotic_input = "".join(random.choice(monkey_chaos_pool) for _ in range(smash_length))
+			
+			# Pick random states to simulate a frantic user switching formats while typing garbage
+			rand_in = random.choice(test_cases)
+			rand_out = random.choice(test_cases)
+			rand_int, rand_frac = SIZE_MAP.get(rand_in, (32, 32))
+
+			try:
+				# Force the chaotic input directly into your Tkinter interface state variables
+				cls.app.input_mode.set(rand_in) 
+				cls.app.output_mode.set(rand_out) 
+				cls.app.int_bits.set(rand_int) 
+				cls.app.frac_bits.set(rand_frac) 
+				cls.app.main_display_var.set(chaotic_input) 
+				
+				# Fire the evaluation trigger!
+				cls.app.on_button_click("Enter") 
+				
+				# If your app handles the exception cleanly (e.g., updates an error message label), 
+				# Python does not crash, and the loop moves on safely.
+				
+			except Exception as monkey_error:
+				# A hard crash here means an unhandled exception occurred, which would crash Render!
+				monkey_crashes += 1
+				monkey_crash_logs.append(
+					f"Monkey Crash #{monkey_idx}!\n"
+					f"  Input Mode: {rand_in} -> {rand_out}\n"
+					f"  Smashed String: {repr(chaotic_input)}\n"
+					f"  Python Error Exception: {monkey_error}\n"
+				)
+
+		print("="*60)
+		print(f"MONKEY CHAOS TEST RESULTS: {'PASSED' if monkey_crashes == 0 else 'FAILED'}")
+		print(f"Total Random Keyboard Smashes Processed: {NUM_MONKEY_SMASHES}")
+		print(f"Unhandled Interface Crashes: {monkey_crashes}")
+		print("="*60 + "\n")
+
+		if monkey_crashes > 0:
+			print(" WARNING: Unhandled UI crashes found! Render could drop connections on these inputs:")
+			for m_log in monkey_crash_logs[:3]: # Show first 3 keyboard crashes
+				print(m_log + "-"*40)
+			if monkey_crashes > 3:
+				print(f"  ...and {monkey_crashes - 3} more unhandled crashes caught.")
+		else:
+			print(" Interface is perfectly armored! All keyboard smash exceptions caught gracefully.")
+		print("="*60 + "\n")
+
 	def press_key(self, char_str):
 		"""Simulates a user physically typing characters or clicking grid buttons."""
 		for char in char_str:
@@ -190,8 +264,8 @@ class TestBench(unittest.TestCase):
 		# STEP 1: Create the binary test vectors
 		
 		test_cases = ["REAL", "HEX", "BIN", "FP32", "FP64"]
-		integer_sizes = [32, 12, 32, 32, 32]
-		fraction_sizes = [32, 12, 32, 32, 32]
+		integer_sizes = [32, 12, 32, 23, 32]
+		fraction_sizes = [32, 12, 32, 23, 32]
 		
 		real_single_pos_right = []
 		hex_single_pos_right = []

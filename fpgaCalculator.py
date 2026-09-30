@@ -8,7 +8,8 @@ from dataclasses import dataclass
 from typing import List, Literal
 from binary_support import precision_profile, lookup_table, twos_complement, binary_string_to_int_list, int_list_to_binary_string, binary_point_removal, twos_complement_bin_rational, list_to_string, remove_msbs, binary_point_alignment
 from binary_conversions import real_to_twos_comp_binary, hexadecimal_to_binary, ieee754_hex_to_binary, binary_to_real, binary_to_hexadecimal, binary_to_ieee754
-from binary_math import binary_division, binary_multiplier, binary_adder, binary_subtraction
+from binary_math import binary_division, binary_multiplier, binary_adder, binary_subtraction, binary_modulo
+from binary_logic import binary_and, binary_or, binary_xor, binary_not
 
 class FpgaCalculator:
 	def __init__(self, root):
@@ -142,78 +143,107 @@ class FpgaCalculator:
 			self.integer_size2 = 0
 			self.fraction_size2 = 0
 		elif char in ('=', 'Enter'):
-			operand1, operand2, operator = self.get_operands()
+			operand1, operand2, operator, input_error = self.get_operands()
 			self.math_operation = operator
 			operand1_data_error = False
 			operand2_data_error = False
 			operand_error = False
 			bin_math_error = False
 			self.nibble_size = self.int_bits.get()//4
-			
-#			print("Inputs = ", operand1, operand2, operator)
-			
-			# Error checking
-			if (self.input_mode.get() == "REAL"):
-				operand1_data_error = self.verify_real_input(operand1)
-				
-				if (operand2 != ""):
-					operand2_data_error = self.verify_real_input(operand2)
-			elif (self.input_mode.get() == "HEX"):
-				if (len(operand1) < self.nibble_size) and (len(operand1) > 0):
-					operand1_padding = self.nibble_size
-					
-					if (any(item in operand1[0] for item in self.hex_negative_list)):
-						operand1 = operand1.rjust(operand1_padding, "F")
-					else:
-						operand1 = operand1.rjust(operand1_padding, "0")
-					
-				operand1_data_error = self.verify_hex_input(operand1)
-				
-				if (self.operand2_present == True):
-					if (len(operand2) < self.nibble_size) and (len(operand2) > 0):
-						operand2_padding = self.nibble_size
 
-						if (any(item in operand2[0] for item in self.hex_negative_list)):
-							operand2 = operand2.rjust(operand2_padding, "F")
+			if (self.enable_print_statements == True):			
+				print("operand1 =  ", operand1, "operand2 = ", operand2, "operator = ", operator, "error = ", input_error)
+			
+			if (input_error == False):
+				# Error checking
+				if (self.input_mode.get() == "REAL"):
+					operand1_data_error = self.verify_real_input(operand1)
+
+					if (operand2 != ""):
+						operand2_data_error = self.verify_real_input(operand2)
+				elif (self.input_mode.get() == "HEX"):
+					if (len(operand1) < self.nibble_size) and (len(operand1) > 0):
+						operand1_padding = self.nibble_size
+
+						if (any(item in operand1[0] for item in self.hex_negative_list)):
+							operand1 = operand1.rjust(operand1_padding, "F")
 						else:
-							operand2 = operand2.rjust(operand2_padding, "0")
-							
-					operand2_data_error = self.verify_hex_input(operand2)
-			elif (self.input_mode.get() == "BIN"):
-				operand1_data_error = self.verify_bin_input(operand1)
-				
-				if (operand2 != ""):
-					operand2_data_error = self.verify_bin_input(operand2)
-				elif (self.operator_present == True) and (self.operand2_present == False):
-					operand2_data_error = True
-			elif (self.input_mode.get() == "FP32"):
-				self.exponent_size = 7
-				self.mantissa_size = 23
-				operand1_data_error = self.verify_fp32_input(operand1)
-				
-				if (self.operand2_present == True):
-					operand2_data_error = self.verify_fp32_input(operand2)
-			elif (self.input_mode.get() == "FP64"):
-				self.exponent_size = 11
-				self.mantissa_size = 52
-				operand1_data_error = self.verify_fp64_input(operand1)
-				
-				if (self.operand2_present == True):
-					operand2_data_error = self.verify_fp64_input(operand2)
+							operand1 = operand1.rjust(operand1_padding, "0")
+
+					operand1_data_error = self.verify_hex_input(operand1)
+
+					if (self.operand2_present == True):
+						if (len(operand2) < self.nibble_size) and (len(operand2) > 0):
+							operand2_padding = self.nibble_size
+
+							if (any(item in operand2[0] for item in self.hex_negative_list)):
+								operand2 = operand2.rjust(operand2_padding, "F")
+							else:
+								operand2 = operand2.rjust(operand2_padding, "0")
+
+						operand2_data_error = self.verify_hex_input(operand2)
+				elif (self.input_mode.get() == "BIN"):
+					operand1_data_error = self.verify_bin_input(operand1)
+
+					if (operand2 != ""):
+						if (self.enable_print_statements == True):
+							print("made it here")
+
+						operand2_data_error = self.verify_bin_input(operand2)
+					elif (self.operator_present == True) and (self.operand2_present == False):
+						operand2_data_error = True
+				elif (self.input_mode.get() == "FP32"):
+					self.exponent_size = 7
+					self.mantissa_size = 23
+					operand1_data_error = self.verify_fp32_input(operand1)
+
+					if (self.operand2_present == True):
+						operand2_data_error = self.verify_fp32_input(operand2)
+				elif (self.input_mode.get() == "FP64"):
+					self.exponent_size = 11
+					self.mantissa_size = 52
+					operand1_data_error = self.verify_fp64_input(operand1)
+
+					if (self.operand2_present == True):
+						operand2_data_error = self.verify_fp64_input(operand2)
 
 			operator_error = self.verify_operator(operator)
 			
-			if (operand1_data_error == False) and (operand2_data_error == False) and (operator_error == False):
-				operand1_binary = self.convert_to_binary(operand1, self.input_mode.get())
-				
-				if (self.operand2_present == True):
-					operand2_binary = self.convert_to_binary(operand2, self.input_mode.get())
-					binary_result = self.binary_math_operation(operand1_binary, operand2_binary, operator)
-					calculator_result = self.convert_from_binary(binary_result, self.output_mode.get())
-				else:
-					calculator_result = self.convert_from_binary(operand1_binary, self.output_mode.get())
+			if (input_error == False):
+				if ((('.' in operand1) or ('.' in operand2)) and (operator in ("&", "|", "^", "~"))) or (operator_error and operator != "") or (input_error == True):
+					if (self.enable_print_statements == True):			
+						print("input error", operator_error, operand1, operand2, operator)	
 
-				self.aux_display_var.set(calculator_result)
+					self.main_display_var.set("")
+
+					if (input_error == True):
+						self.aux_display_var.set("Input data error")
+					elif (operator in ("&", "|", "^", "~")):
+						self.aux_display_var.set("Enter logic operands without radix point")
+					elif (operator_error == True):
+						self.aux_display_var.set("Input operator error")
+					else:
+						self.aux_display_var.set("ERROR")
+				elif (operand1_data_error == False) and (operand2_data_error == False) and (operator_error == False):
+					operand1_binary = self.convert_to_binary(operand1, self.input_mode.get())
+
+					if (self.operand2_present == True):
+						operand2_binary = self.convert_to_binary(operand2, self.input_mode.get())
+						binary_result = self.binary_math_operation(operand1_binary, operand2_binary, operator)
+						calculator_result = self.convert_from_binary(binary_result, self.output_mode.get())
+					elif (operator == "~"):
+						binary_result = self.binary_math_operation(operand1_binary, None, operator)
+						calculator_result = self.convert_from_binary(binary_result, self.output_mode.get())
+					else:
+						calculator_result = self.convert_from_binary(operand1_binary, self.output_mode.get())
+
+					self.aux_display_var.set(calculator_result)
+				else:
+					if (self.enable_print_statements == True):			
+						print("general error")
+
+					self.main_display_var.set("")
+					self.aux_display_var.set("ERROR")
 			else:
 				self.main_display_var.set("")
 				self.aux_display_var.set("ERROR")
@@ -223,8 +253,8 @@ class FpgaCalculator:
 
 	def get_operands(self):
 		raw_input = self.main_display_var.get()
-		operand1, operator, operand2 = self.parse_input_string(raw_input)
-		return operand1, operand2, operator
+		operand1, operator, operand2, input_error = self.parse_input_string(raw_input)
+		return operand1, operand2, operator, input_error
 		
 	def parse_input_string(self, input_string):
 		# No regex options would work here, so this is a brute force state machine
@@ -237,6 +267,7 @@ class FpgaCalculator:
 		self.operand1_present = False
 		self.operator_present = False
 		self.operand2_present = False
+		input_error = False
 		
 #		print('parser input string = ', input_string)
 		
@@ -244,35 +275,51 @@ class FpgaCalculator:
 			match state:
 				case 'Empty_String_Check':
 					if not input_string:
-						return left, op, right
+						input_error = True
+						return left, op, right, input_error
 					else:
 						state = 'First_Character'
 				case 'First_Character':
-					if (input_string[input_index] == '+'):
+					if (input_string[input_index] == '+') or (input_string[input_index] == '~'):
+						if (input_string[input_index] == '~'):
+							op = input_string[0]
+							
+						input_index = input_index + 1
+						
 						state = 'First_Operand'
-					elif (input_string[input_index] == '-') or (input_string[input_index].isalnum()):
+					elif (input_string[input_index] == '-') or (input_string[input_index].isalnum()) or (input_string[input_index] == "."):
 						left += input_string[input_index]
 						
 						if (len(input_string) > 1):
 							input_index = input_index + 1
 							state = 'First_Operand'
 						else:
-							return left, op, right
+							return left, op, right, input_error
 					else:
-						return left, op, right
+						input_error = True
+						return left, op, right, input_error
 				case 'First_Operand':
-					while input_string[input_index] not in ("+", "-", "*", "/", ""):
-						left += input_string[input_index]
+					while (input_string[input_index] not in ("+", "-", "*", "/", "%", "&", "|", "^", "")):
+						if (input_string[input_index].isalnum()) or (input_string[input_index] == "."):
+							left += input_string[input_index]
 
-						if (input_index < data_length-1):
-							input_index = input_index + 1
+							if (input_index < data_length-1):
+								input_index = input_index + 1
+							else:
+								self.operand1_present = True
+								if (self.enable_print_statements == True):
+									print("path A", len(left), len(op), len(right))
+								return left, op, right, input_error
 						else:
-							self.operand1_present = True
-							return left, op, right
+							input_error = True
+							return left, op, right, input_error
 					else:
 						self.operand1_present = True
 						self.operator_present = True
-						op = input_string[input_index]
+						
+						if (op != '~'):
+							op = input_string[input_index]
+							
 						input_index = input_index + 1
 
 					if (input_index < len(input_string)):
@@ -280,22 +327,30 @@ class FpgaCalculator:
 							state = 'Second_Operand'
 						else:
 							self.operand2_present = False
-							return left, op, right
+							if (self.enable_print_statements == True):
+								print("path B")
+							return left, op, right, input_error
 					else:
 						self.operand2_present = False
-						return left, op, right
+						if (self.enable_print_statements == True):
+							print("path C")
+						return left, op, right, input_error
 				case 'Second_Operand':
 					while input_string[input_index] not in (""):
-						right += input_string[input_index]
-						
-						if (input_index < data_length-1):
-							input_index = input_index + 1
+						if (input_string[input_index].isalnum()) or (input_string[input_index] == ".") or ((right == "") and (input_string[input_index] == "-")):
+							right += input_string[input_index]
+
+							if (input_index < data_length-1):
+								input_index = input_index + 1
+							else:
+								self.operand2_present = True
+								return left, op, right, input_error
 						else:
-							self.operand2_present = True
-							return left, op, right
+							input_error = True
+							return left, op, right, input_error
 
 					self.operand2_present = True
-					return left, op, right
+					return left, op, right, input_error
 		
 	def verify_real_input(self, input_string):
 		try:
@@ -317,7 +372,7 @@ class FpgaCalculator:
 	
 	def verify_bin_input(self, input_string):
 		try:
-			int(input_string.replace('.', ''), 2) # Enforces 0s and 1s only
+#			int(input_string.replace('.', ''), 2) # Enforces 0s and 1s only
 			return ((input_string.count('.') > 1) or ((input_string[0] != '0') and (input_string[0] != '1')) or (input_string[-1] == '.'))
 		except ValueError:
 			return True
@@ -337,7 +392,15 @@ class FpgaCalculator:
 		return len(input_string) != 16 or not self.is_valid_hex(input_string)
 
 	def verify_operator(self, input_string):
-		return input_string not in "+-*/"
+		if (input_string in ("&", "|", "^", "~")):
+			if (self.input_mode.get() not in ("REAL", "FP32", "FP64")) and (self.output_mode.get() not in ("REAL", "FP32", "FP64")):
+				logic_error = False
+			else:
+				logic_error = True
+		else:
+			logic_error = False
+			
+		return (input_string not in ("+", "-", "*", "/", "%", "&", "|", "^", "~", "")) or logic_error
 
 	def convert_to_binary(self, operand, input_mode):
 		if (input_mode == "REAL"):
@@ -382,84 +445,9 @@ class FpgaCalculator:
 			else:
 				max_size = self.int_bits.get() + self.frac_bits.get()
 			
-#			if ('.' in operand1) or ('.' in operand2):
-#				operand1_no_bin_point, operand2_no_bin_point, op1_radix_index, op2_radix_index, fraction_size = binary_point_removal(operand1, operand2)
-#			else:
-#				operand1_no_bin_point = operand1
-#				operand2_no_bin_point = operand2
-#				fraction_size = 0
-			operand1_no_bin_point, operand2_no_bin_point, operand1_fraction_size, operand2_fraction_size = binary_point_alignment(operand1, operand2, False)
-			
-			if (operand1[0] == 1):
-				operand1_2s_comp, op1_carry = twos_complement(operand1_no_bin_point)
-				sign_operand1 = 1
-			else:
-				operand1_2s_comp = operand1_no_bin_point
-				sign_operand1 = 0
-			
-			if (operand2[0] == 1):
-				operand2_2s_comp, op2_carry = twos_complement(operand2_no_bin_point)
-				sign_operand2 = 1
-			else:
-				operand2_2s_comp = operand2_no_bin_point
-				sign_operand2 = 0
-			
-#			print("Fraction size = ", fraction_size)
-			
-			quotient = binary_division(operand1_2s_comp, operand2_2s_comp, max_size)
-			
-			if (self.enable_print_statements == True):
-				print("No binary points = ", list_to_string(operand1_no_bin_point), list_to_string(operand2_no_bin_point))
-				print("quotient raw = ", "".join(map(str, quotient)))
-				print("Inputs = ", list_to_string(operand1_bin_point), list_to_string(operand2_bin_point))
-			
-			if ((sign_operand1 ^ sign_operand2) == 1):
-#				quotient_no_bin_point, null_output, quotient_radix_index, null_radix_index, fraction_size = binary_point_removal(quotient, [''])
-				quotient_size = len(quotient)
-				
-				if ('.' in quotient):
-					quotient_radix_index = quotient.index('.')
-					quotient.pop(quotient_radix_index)
-				else:
-					quotient_radix_index = quotient_size
+			quotient = binary_division(operand1, operand2, max_size)
 
-				if (quotient_radix_index < quotient_size):
-					quotient_fraction_size = quotient_size - (quotient_radix_index + 1)
-				else:
-					quotient_fraction_size = 0
-					
-				quotient_no_bin_point = quotient
-				quotient_2s_comp, carry_quotient = twos_complement(quotient_no_bin_point)
-				
-#				if (sign_operand1 == 1):
-#					quotient_2s_comp_bin_point = quotient_2s_comp[:quotient_size - quotient_fraction_size + 1] + ['.'] + quotient_2s_comp[quotient_size - quotient_fraction_size + 1:]
-#				elif (sign_operand2 == 1):
-#					quotient_2s_comp_bin_point = quotient_2s_comp[:quotient_size - quotient_fraction_size - 2] + ['.'] + quotient_2s_comp[quotient_size - quotient_fraction_size - 2:]
-#				else:
-				quotient_2s_comp_bin_point = quotient_2s_comp[:quotient_size - quotient_fraction_size - 1] + ['.'] + quotient_2s_comp[quotient_size - quotient_fraction_size - 1:]
-				
-				if False:
-					if (self.int_bits.get() > quotient_radix_index):
-						quotient_extended = [0]*(self.int_bits.get() - quotient_radix_index) + quotient_no_bin_point
-						quotient_2s_comp, carry_quotient = twos_complement(quotient_extended)
-						quotient_2s_comp_bin_point = quotient_2s_comp[:self.int_bits.get()] + ['.'] + quotient_2s_comp[self.int_bits.get():]
-					else:
-						quotient_extended = quotient_no_bin_point
-						quotient_2s_comp, carry_quotient = twos_complement(quotient_extended)
-						quotient_2s_comp_bin_point = quotient_2s_comp[:quotient_radix_index] + ['.'] + quotient_2s_comp[quotient_radix_index:]
-				
-#				print("quotient 2s comp = ", "".join(map(str, quotient_2s_comp_bin_point)))
-
-				if (self.enable_print_statements == True):
-					print(quotient_radix_index, list_to_string(quotient), list_to_string(quotient_no_bin_point), list_to_string(quotient_2s_comp_bin_point))
-					
-				math_result_2s_comp = quotient_2s_comp_bin_point
-			else:
-				math_result_2s_comp = quotient
-			
-#			print("quotient = ", "".join(map(str, math_result_2s_comp)))
-
-			math_result = math_result_2s_comp
+			math_result = quotient
 		elif (operator == "*"):
 			math_result = binary_multiplier(operand1, operand2)
 		elif (operator == "+"):
@@ -486,7 +474,21 @@ class FpgaCalculator:
 			math_result = sum_result[:binary_point_index] + ['.'] + sum_result[binary_point_index:]
 		elif (operator == "-"):
 			math_result = binary_subtraction(operand1, operand2)
-	
+		elif (operator == "%"):
+			max_size = self.int_bits.get() + self.frac_bits.get()
+			math_result = binary_modulo(operand1, operand2, max_size)
+		elif (operator == "&"):
+			math_result = binary_and(operand1, operand2)
+		elif (operator == "|"):
+			math_result = binary_or(operand1, operand2)
+		elif (operator == "^"):
+			math_result = binary_xor(operand1, operand2)
+		elif (operator == "~"):
+			if (self.enable_print_statements == True):			
+				print("Performing inversion")
+				print("inverter input = ", list_to_string(operand1))
+				
+			math_result = binary_not(operand1)
 		return math_result
 	
 	def convert_from_binary(self, operand, output_mode):
