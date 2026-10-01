@@ -48,9 +48,9 @@
               "RelativeDocumentMoniker": "fpgaCalculator.py",
               "ToolTip": "C:\\Users\\ambig\\source\\repos\\programmersCalculator\\fpgaCalculator.py",
               "RelativeToolTip": "fpgaCalculator.py",
-              "ViewState": "AgIAAGAAAAAAAAAAAADwv2cAAABUAAAAAAAAAA==",
+              "ViewState": "AgIAAM8AAAAAAAAAAADwv9YAAAACAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-09-22T05:23:57.689Z",
+              "WhenOpened": "2026-10-01T19:28:50.112Z",
               "EditorCaption": ""
             },
             {
@@ -63,7 +63,8 @@
               "RelativeToolTip": "binary_logic.py",
               "ViewState": "AgIAABEAAAAAAAAAAAAcwBsAAAAbAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002457|",
-              "WhenOpened": "2026-09-30T02:40:25.195Z"
+              "WhenOpened": "2026-09-30T02:40:25.195Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",

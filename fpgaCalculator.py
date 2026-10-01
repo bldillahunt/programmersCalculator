@@ -119,7 +119,7 @@ class FpgaCalculator:
 			('1', '2', '3', '-'),
 			('0', '.', 'R', '+'),
 			('A', 'B', 'C', 'D'),
-			('E', 'F', 'Enter', '=')
+			('E', 'F', 'Help', '=')
 		]
 		
 		for r, row in enumerate(buttons):
@@ -143,10 +143,12 @@ class FpgaCalculator:
 			self.fraction_size1 = 0
 			self.integer_size2 = 0
 			self.fraction_size2 = 0
-		elif char in ('=', 'Enter'):
+		elif char in ('='):
 			main_display_value, calculator_result = compute_evaluation_step(self.main_display_var.get(), self.input_mode.get(), self.output_mode.get(), self.int_bits.get(), self.frac_bits.get(), enable_print_statements=False)
 			self.main_display_var.set(main_display_value)
 			self.aux_display_var.set(calculator_result)
+		elif (char == 'Help'):
+			self.open_help_dialog()
 		else:
 			current = self.main_display_var.get()
 			self.main_display_var.set(current + str(char))
@@ -196,3 +198,54 @@ class FpgaCalculator:
 			).pack(padx=10, pady=10)
 
 			dialog.after(10000, dialog.destroy)
+
+	def open_help_dialog(self):
+		# 1. Create a floating window on top of the main window
+		help_window = tk.Toplevel()
+		help_window.title("How to Use")
+		help_window.geometry("340x300") # Set size to fit nicely
+		help_window.resizable(False, False)
+
+		# Force this window to stay on top until closed
+		help_window.transient()
+		help_window.grab_set()
+
+		# 2. Main Title Label
+		title_label = ttk.Label(help_window, text="How to Use the Calculator", font=("Arial", 12, "bold"))
+		title_label.pack(pady=(15, 10), anchor="w", padx=15)
+
+		# 3. Format Box (Matches your NiceGUI style)
+		format_text = (
+			"Format:\n"
+			"<operand1><operator><operand2>\n"
+			"or\n"
+			"<operator><operand1>\n"
+			"or\n"
+			"<operator>"
+		)
+		# Using a subtle gray background box for the syntax
+		format_label = tk.Label(
+			help_window, 
+			text=format_text, 
+			font=("Courier", 10), 
+			bg="#f0f0f0", 
+			justify="left", 
+			anchor="w",
+			padx=10,
+			pady=8
+		)
+		format_label.pack(fill="x", padx=15, pady=(0, 10))
+
+		# 4. Bullet Points Instructions
+		bullet_text = (
+			" Inputs: Supports Real, Hex, Bin, FP32, and FP64.\n"
+			" Binary: Entered in 2's complement with a binary point.\n"
+			" Operations: Select math (+,-,*,/,%) or logic (&,|,^,~,!).\n"
+			" Unary: ~ is for inversion, ! is for 2's complement."
+		)
+		bullet_label = ttk.Label(help_window, text=bullet_text, font=("Arial", 9), justify="left")
+		bullet_label.pack(anchor="w", padx=15, pady=(5, 15))
+
+		# 5. Close Button
+		close_button = ttk.Button(help_window, text="Close", command=help_window.destroy)
+		close_button.pack(fill="x", padx=15, pady=(0, 10))
