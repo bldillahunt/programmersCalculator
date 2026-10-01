@@ -33,11 +33,11 @@ class TestBench(unittest.TestCase):
 		math_ops = ["+", "-", "*", "/"]
 		
 		SIZE_MAP = {
-			"HEX":  (12, 12),
-			"REAL": (32, 32),
-			"BIN":  (32, 32),
-			"FP32": (12, 11),
-			"FP64": (32, 32),
+			"HEX":  (32, 64),
+			"REAL": (32, 64),
+			"BIN":  (32, 64),
+			"FP32": (12, 64),
+			"FP64": (32, 64),
 		}		
 		
 		# Set a target number of random combinations to run (e.g., 2000 patterns)
@@ -74,7 +74,7 @@ class TestBench(unittest.TestCase):
 #			int_size = 12 if in_type == "HEX" else 32
 #			frac_size = 12 if in_type == "HEX" else 32
 
-			int_size, frac_size = SIZE_MAP.get(in_type, (32, 32))
+			int_size, frac_size = SIZE_MAP.get(in_type, (32, 64))
 
 			# 2. Generate two distinct, randomized binary array seeds
 			seed_a = generate_random_bin_list(int_size, frac_size)
@@ -484,7 +484,7 @@ class TestBench(unittest.TestCase):
 		# Use the data from the output of step 1 above, pair them off, and then pass them through four times,
 		# once for each math operation
 		
-		math_operations = ["+", "-", "*", "/"]
+		math_operations = ["+", "-", "*", "/", "%"]
 		
 		test_a_real_add = []
 		test_a_real_sub = []
@@ -559,6 +559,9 @@ class TestBench(unittest.TestCase):
 		test_a_lists = [test_a_real_lists, test_a_hex_lists, test_a_bin_lists, test_a_fp32_lists, test_a_fp64_lists]
 		test_b_lists = [test_b_real_lists, test_b_hex_lists, test_b_bin_lists, test_b_fp32_lists, test_b_fp64_lists]
 		
+		error_counter = 0
+		permutation_counter = 0
+		
 		for tests, test_a, test_b, pos_right, neg_right, pos_left, neg_left, int_size, frac_size in zip(test_cases, test_a_lists, test_b_lists, output_arrays_pos_right, output_arrays_neg_right, output_arrays_pos_left, output_arrays_neg_left, integer_sizes, fraction_sizes):	# 5 iterations
 			for math_a, math_b, op in zip(test_a, test_b, math_operations):	# 4 iterations
 				for i in range(0, len(pos_right)):
@@ -576,13 +579,18 @@ class TestBench(unittest.TestCase):
 						math_a_real_result = Decimal(binary_to_real(single_positive_right_vectors[i])) * Decimal(binary_to_real(single_negative_left_vectors[i]))
 					elif (op == '/'):
 						math_a_real_result = Decimal(binary_to_real(single_positive_right_vectors[i])) / Decimal(binary_to_real(single_negative_left_vectors[i]))
+					elif (op == '%'):
+						math_a_real_result = Decimal(binary_to_real(single_positive_right_vectors[i])) % Decimal(binary_to_real(single_negative_left_vectors[i]))
 					
 					math_a_real = Decimal(binary_to_real(binary_string_to_int_list(math_a[i])))
 					
 					if (math_a_real_result != math_a_real):
 						print("Mismatch: output A = ", math_a_real, "actual = ", math_a_real_result, list_to_string(single_positive_right_vectors[i]), list_to_string(single_negative_left_vectors[i]), op, tests)
 						print(input_data_a)
+						error_counter += 1
 #						input("Press enter to continue")
+
+					permutation_counter += 1
 					
 					input_data_b = neg_right[i] + op + pos_left[i]
 					math_b.append(self.gui_entry_parameters(input_data_b, tests, "BIN", int_size, frac_size))
@@ -595,13 +603,20 @@ class TestBench(unittest.TestCase):
 						math_b_real_result = Decimal(binary_to_real(single_negative_right_vectors[i])) * Decimal(binary_to_real(single_positive_left_vectors[i]))
 					elif (op == '/'):
 						math_b_real_result = Decimal(binary_to_real(single_negative_right_vectors[i])) / Decimal(binary_to_real(single_positive_left_vectors[i]))
+					elif (op == '%'):
+						math_b_real_result = Decimal(binary_to_real(single_negative_right_vectors[i])) % Decimal(binary_to_real(single_positive_left_vectors[i]))
 					
 					math_b_real = Decimal(binary_to_real(binary_string_to_int_list(math_b[i])))
 					
 					if (math_b_real_result != math_b_real):
 						print("Mismatch: output B = ", math_b_real, "actual = ", math_b_real_result, list_to_string(single_negative_right_vectors[i]), list_to_string(single_positive_left_vectors[i]), op, tests)
 						print(input_data_b)
+						error_counter += 1
 #						input("Press enter to continue")
+					
+					permutation_counter += 1
+		
+		print("Permutation count = ", permutation_counter, "Error count = ", error_counter)
 		
 if __name__ == '__main__':
     unittest.main()				

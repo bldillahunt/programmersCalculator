@@ -291,14 +291,17 @@ def binary_modulo(A, B, max_size):
 #	print("product = ", list_to_string(product))
 	modulo = binary_subtraction(a_copy, product)
 #	print("modulo = ", list_to_string(modulo))
-	
-	if ((a_sign_bit ^ b_sign_bit) == 1):
-		modulo_radix = modulo.index('.')
-		modulo.pop(modulo_radix)
-		modulo_2s_comp, carry = twos_complement(modulo)	
-		modulo_2s_comp.insert(modulo_radix, '.')
-	else:
-		modulo_2s_comp = modulo
+
+	if False:	
+		if ((a_sign_bit ^ b_sign_bit) == 1):
+			modulo_radix = modulo.index('.')
+			modulo.pop(modulo_radix)
+			modulo_2s_comp, carry = twos_complement(modulo)	
+			modulo_2s_comp.insert(modulo_radix, '.')
+		else:
+			modulo_2s_comp = modulo
+
+	modulo_2s_comp = modulo
 	
 	return modulo_2s_comp
 
