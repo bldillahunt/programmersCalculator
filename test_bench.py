@@ -36,7 +36,7 @@ class TestBench(unittest.TestCase):
 			"HEX":  (32, 64),
 			"REAL": (32, 64),
 			"BIN":  (32, 64),
-			"FP32": (12, 64),
+			"FP32": (12, 11),
 			"FP64": (32, 64),
 		}		
 		
@@ -54,7 +54,7 @@ class TestBench(unittest.TestCase):
 			cls.app.int_bits.set(i_sz) 
 			cls.app.frac_bits.set(f_sz) 
 			cls.app.main_display_var.set(val) 
-			cls.app.on_button_click("Enter") 
+			cls.app.on_button_click("=") 
 			return cls.app.aux_display_var.get()
 
 		# Helper to generate a completely randomized, valid fixed-point binary string list
@@ -184,7 +184,7 @@ class TestBench(unittest.TestCase):
 				cls.app.main_display_var.set(chaotic_input) 
 				
 				# Fire the evaluation trigger!
-				cls.app.on_button_click("Enter") 
+				cls.app.on_button_click("=") 
 				
 				# If your app handles the exception cleanly (e.g., updates an error message label), 
 				# Python does not crash, and the loop moves on safely.
@@ -226,7 +226,7 @@ class TestBench(unittest.TestCase):
 		self.app.int_bits.set(int_size) 
 		self.app.frac_bits.set(frac_size) 
 		self.app.main_display_var.set(value) 
-		self.app.on_button_click("Enter") 
+		self.app.on_button_click("=") 
 		return self.app.aux_display_var.get()
 	
 	def single_bit_shifter_right(self, operand_sign, seed_value):
@@ -315,6 +315,9 @@ class TestBench(unittest.TestCase):
 			for i in range(0, len(single_positive_right_vectors)):
 				item.append(self.gui_entry_parameters("".join(map(str, single_positive_right_vectors[i])), "BIN", test, int_size, frac_size))
 				binary_input_file.write(str(item[i]) + "\n")				
+				
+				if (len(item[i]) == 0):
+					print("1. positive right", test, list_to_string(single_positive_right_vectors[i]))
 		
 		# Test pattern: single bit, negative value shifted to the right
 		neg_right_seed_value = [1] + [0]*11 + ['.'] + [0]*12
@@ -330,6 +333,9 @@ class TestBench(unittest.TestCase):
 			for i in range(0, len(single_negative_right_vectors)):
 				item.append(self.gui_entry_parameters("".join(map(str, single_negative_right_vectors[i])), "BIN", test, int_size, frac_size))
 				binary_input_file.write(str(item[i]) + "\n")				
+				
+				if (len(item[i]) == 0):
+					print("1. negative right", test, list_to_string(single_negative_right_vectors[i]))
 
 		# Test pattern: single bit, positive value shifted to the left
 		pos_left_seed_value = [0]*11 + ['.'] + [0]*11 + [1]
@@ -345,6 +351,9 @@ class TestBench(unittest.TestCase):
 			for i in range(0, len(single_positive_left_vectors)):
 				item.append(self.gui_entry_parameters("".join(map(str, single_positive_left_vectors[i])), "BIN", test, int_size, frac_size))
 				binary_input_file.write(str(item[i]) + "\n")				
+				
+				if (len(item[i]) == 0):
+					print("1. positive left", test, list_to_string(single_positive_left_vectors[i]))
 
 		# Test pattern: single bit, negative value shifted to the left
 		neg_left_seed_value = [1]*11 + ['.'] + [1]*11 + [1]
@@ -360,6 +369,9 @@ class TestBench(unittest.TestCase):
 			for i in range(0, len(single_negative_left_vectors)):
 				item.append(self.gui_entry_parameters("".join(map(str, single_negative_left_vectors[i])), "BIN", test, int_size, frac_size))
 				binary_input_file.write(str(item[i]) + "\n")				
+				
+				if (len(item[i]) == 0):
+					print("1. negative left", test, list_to_string(single_negative_left_vectors[i]))
 
 #		print("Created test vectors")
 		
@@ -384,6 +396,9 @@ class TestBench(unittest.TestCase):
 			for i in range(0, len(input_lists)):
 				output_lists.append(self.gui_entry_parameters(input_lists[i], tests, "BIN", int_size, frac_size))
 				binary_output_file.write(str(output_lists[i]) + "\n")
+				
+				if (len(output_lists[i]) == 0) or (len(input_lists[i]) == 0):
+					print("positive right", tests, input_lists[i])
 
 		# Test pattern: single bit, negative value shifted to the right
 		single_neg_right_real = []
@@ -402,6 +417,9 @@ class TestBench(unittest.TestCase):
 			for i in range(0, len(input_lists)):
 				output_lists.append(self.gui_entry_parameters(input_lists[i], tests, "BIN", int_size, frac_size))
 				binary_output_file.write(str(output_lists[i]) + "\n")
+				
+				if (len(output_lists[i]) == 0) or (len(input_lists[i]) == 0):
+					print("negative right", tests, input_lists[i])
 
 		# Test pattern: single bit, positive value shifted to the left
 		single_pos_left_real = []
@@ -420,6 +438,9 @@ class TestBench(unittest.TestCase):
 			for i in range(0, len(input_lists)):
 				output_lists.append(self.gui_entry_parameters(input_lists[i], tests, "BIN", int_size, frac_size))
 				binary_output_file.write(str(output_lists[i]) + "\n")
+				
+				if (len(output_lists[i]) == 0) or (len(input_lists[i]) == 0):
+					print("positive left", tests, input_lists[i])
 
 		# Test pattern: single bit, negative value shifted to the left
 		single_neg_left_real = []
@@ -438,6 +459,9 @@ class TestBench(unittest.TestCase):
 			for i in range(0, len(input_lists)):
 				output_lists.append(self.gui_entry_parameters(input_lists[i], tests, "BIN", int_size, frac_size))
 				binary_output_file.write(str(output_lists[i]) + "\n")
+				
+				if (len(output_lists[i]) == 0) or (len(input_lists[i]) == 0):
+					print("negative left", tests, input_lists[i])
 		
 		binary_input_file.close()
 		binary_output_file.close()
@@ -450,18 +474,30 @@ class TestBench(unittest.TestCase):
 		
 		for tests, output_list in zip(test_cases, bin_out_arrays_pos_right):
 			for i in range(0, len(single_positive_right_vectors)):
+				if (len(single_positive_right_vectors[i]) == 0) or (len(output_list[i]) == 0):
+					print("single positive right", "test = ", tests, "input vector = ", single_positive_right_vectors[i], "output vector = ", output_list[i])
+					
 				comparison_file.write(binary_to_real(single_positive_right_vectors[i]) + " " + binary_to_real(binary_string_to_int_list(output_list[i])) + " " + list_to_string(single_positive_right_vectors[i]) + " " + output_list[i] + "\n")
 		
 		for tests, output_list in zip(test_cases, bin_out_arrays_neg_right):
 			for i in range(0, len(single_negative_right_vectors)):
+				if (len(single_positive_right_vectors[i]) == 0) or (len(output_list[i]) == 0):
+					print("single negative right", tests)
+					
 				comparison_file.write(binary_to_real(single_negative_right_vectors[i]) + " " + binary_to_real(binary_string_to_int_list(output_list[i])) + " " + list_to_string(single_negative_right_vectors[i]) + " " + output_list[i] + "\n")
 		
 		for tests, output_list in zip(test_cases, bin_out_arrays_pos_left):
 			for i in range(0, len(single_positive_left_vectors)):
+				if (len(single_positive_right_vectors[i]) == 0) or (len(output_list[i]) == 0):
+					print("single positive left", tests)
+					
 				comparison_file.write(binary_to_real(single_positive_left_vectors[i]) + " " + binary_to_real(binary_string_to_int_list(output_list[i])) + " " + list_to_string(single_positive_left_vectors[i]) + " " + output_list[i] + "\n")
 		
 		for tests, output_list in zip(test_cases, bin_out_arrays_neg_left):
 			for i in range(0, len(single_negative_left_vectors)):
+				if (len(single_positive_right_vectors[i]) == 0) or (len(output_list[i]) == 0):
+					print("single negative left", tests)
+					
 				comparison_file.write(binary_to_real(single_negative_left_vectors[i]) + " " + binary_to_real(binary_string_to_int_list(output_list[i])) + " " + list_to_string(single_negative_left_vectors[i]) + " " + output_list[i] + "\n")
 		
 		comparison_file.close()
